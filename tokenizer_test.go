@@ -6,6 +6,7 @@ import (
 
 	"strings"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,6 +30,13 @@ func Test_throwTrailingSpaces(t *testing.T) {
 			name: "degenerate case (empty slice)",
 			args: args{
 				src: []rune{},
+			},
+			wantRes: []rune{},
+		},
+		{
+			name: "degenerate case (all spaces)",
+			args: args{
+				src: []rune("    "),
 			},
 			wantRes: []rune{},
 		},
@@ -90,6 +98,14 @@ func Test_passHeadSpaces(t *testing.T) {
 			wantRest:   []rune{},
 		},
 		{
+			name: "degenerate case (all spaces)",
+			args: args{
+				src: []rune("    "),
+			},
+			wantSpaces: []rune("    "),
+			wantRest:   []rune{},
+		},
+		{
 			name: "simplest case",
 			args: args{
 				src: []rune("12345"),
@@ -128,7 +144,7 @@ func Test_passHeadSpaces(t *testing.T) {
 }
 
 var (
-	tokenSimplest = func(lin int, offset int) Header {
+	tokenHeaderSimplest = func(lin int, offset int) Header {
 		return Header{
 			Location: Location{
 				Lin:  lin,
@@ -148,7 +164,7 @@ var (
 		}
 	}
 
-	tokenHarder = func(lin int) Header {
+	tokenHeaderHarder = func(lin int) Header {
 		return Header{
 			Location: Location{
 				Lin:  lin,
@@ -168,7 +184,7 @@ var (
 		}
 	}
 
-	tokenHardest = func(lin int) Header {
+	tokenHeaderHardest = func(lin int) Header {
 		return Header{
 			Location: Location{
 				Lin:  lin,
@@ -205,19 +221,19 @@ func TestTokeniserLine(t *testing.T) {
 			name:  "simplest case",
 			input: "#header",
 			scan:  true,
-			token: tokenSimplest(0, 0),
+			token: tokenHeaderSimplest(0, 0),
 		},
 		{
 			name:  "harder case",
 			input: "## хеадер",
 			scan:  true,
-			token: tokenHarder(0),
+			token: tokenHeaderHarder(0),
 		},
 		{
 			name:  "harder case",
 			input: "#  хе д р    ",
 			scan:  true,
-			token: tokenHardest(0),
+			token: tokenHeaderHardest(0),
 		},
 	}
 	for _, tt := range tests {
@@ -235,13 +251,13 @@ func TestTokeniserLine(t *testing.T) {
 }
 
 func TestTokenizerSeveralLines(t *testing.T) {
-	inputList := []string{"#header", " #header", "## хеадер", "#  хе д р    "}
+	inputList := []string{"#header", "", " #header", "## хеадер", "#  хе д р    "}
 	tz := NewTokenizer([]byte(strings.Join(inputList, "\n")))
 	samples := []Header{
-		tokenSimplest(0, 0),
-		tokenSimplest(0, 1),
-		tokenHarder(1),
-		tokenHardest(2),
+		tokenHeaderSimplest(0, 0),
+		tokenHeaderSimplest(1, 1),
+		tokenHeaderHarder(2),
+		tokenHeaderHardest(3),
 	}
 	var i = 0
 	for tz.Next() {
@@ -249,4 +265,108 @@ func TestTokenizerSeveralLines(t *testing.T) {
 		i++
 	}
 	require.Len(t, tz.Warnings(), 1)
+}
+
+var (
+	tokenCodeSimplest = func(lin, col int, syntax string) Code {
+		return Code{
+			Location: Location{
+				Lin:  lin,
+				Col:  col,
+				XLin: lin + 1,
+				XCol: 3,
+			},
+			Syntax: String{
+				Location: Location{
+					Lin:  lin,
+					Col:  col + 4,
+					XLin: lin,
+					XCol: col + 4 + len(syntax),
+				},
+				Value: syntax,
+			},
+			Content: String{
+				Location: Location{
+					Lin:  lin + 1,
+					Col:  0,
+					XLin: lin + 1,
+					XCol: 0,
+				},
+				Value: "",
+			},
+		}
+	}
+)
+
+func TestTokenizerCodeBlock(t *testing.T) {
+	input := "``` code\n```"
+	tz := NewTokenizer([]byte(input))
+	assert.True(t, tz.Next())
+	if tz.Err() != nil {
+		t.Fatal(tz.Err())
+	}
+	require.Equal(t, tokenCodeSimplest(0, 0, "code"), tz.Token())
+
+	input = "```   code  \n```"
+	tz = NewTokenizer([]byte(input))
+	assert.True(t, tz.Next())
+	if tz.Err() != nil {
+		t.Fatal(tz.Err())
+	}
+	sample := tokenCodeSimplest(0, 0, "code")
+	sample.Syntax.Col += 2
+	sample.Syntax.XCol += 2
+	require.Equal(t, sample, tz.Token())
+
+	input = "  ```code \n```"
+	tz = NewTokenizer([]byte(input))
+	assert.True(t, tz.Next())
+	sample.Location.Col = 2
+	sample.Syntax.Location.Col = 5
+	sample.Syntax.Location.XCol = 9
+	if tz.Err() != nil {
+		t.Fatal(tz.Err())
+	}
+	require.Equal(t, sample, tz.Token())
+}
+
+func TestTokenizerCodeBlockRealWorld(t *testing.T) {
+	input := strings.Join([]string{
+		"```sql",
+		"SELECT 1, 2, 3 FROM a",
+		"WHERE date > '2017-06-01'",
+		"```",
+	}, "\n")
+
+	tz := NewTokenizer([]byte(input))
+	require.True(t, tz.Next())
+	require.Empty(t, tz.Warnings())
+	require.Equal(t,
+		Code{
+			Location: Location{
+				Lin:  0,
+				Col:  0,
+				XLin: 3,
+				XCol: 3,
+			},
+			Syntax: String{
+				Location: Location{
+					Lin:  0,
+					Col:  3,
+					XLin: 0,
+					XCol: 6,
+				},
+				Value: "sql",
+			},
+			Content: String{
+				Location: Location{
+					Lin:  1,
+					Col:  0,
+					XLin: 3,
+					XCol: 0,
+				},
+				Value: "SELECT 1, 2, 3 FROM a\nWHERE date > '2017-06-01'\n",
+			},
+		},
+		tz.Token())
 }

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"strings"
 	"unicode"
 )
 
@@ -60,11 +61,28 @@ type Tokenizer struct {
 
 // NewTokenizer constructor
 func NewTokenizer(input []byte) *Tokenizer {
-	return &Tokenizer{
+	res := &Tokenizer{
 		input: input,
 		scan:  bufio.NewScanner(bytes.NewReader(input)),
 		lin:   -1,
 	}
+	in := []rune(string(input))
+	lin := 0
+	col := 0
+	for _, r := range in {
+		switch r {
+		case '\n':
+			lin++
+			col = 0
+		case '\t':
+			res.locReport(lin, col, "tabulations are not allowed, convert them to spaces")
+		case '\r':
+			res.locReport(lin, col, "\\r symbols are not allowed, remove them")
+		default:
+			col++
+		}
+	}
+	return res
 }
 
 // Err returns error status. It is guaranteed Err can only return error if the previous Next call returned false
@@ -79,7 +97,10 @@ func (t *Tokenizer) Warnings() []error {
 
 // Next checks if something to be extracted left
 func (t *Tokenizer) Next() bool {
-	return t.nextHeader() //|| t.nextCode() || t.nextComment()
+	if t.err != nil {
+		return false
+	}
+	return t.nextHeader() || t.nextCode() // || t.nextComment()
 }
 
 // Token returns token extracted with
@@ -98,8 +119,9 @@ func passHeadSpaces(src []rune) (spaces []rune, rest []rune) {
 
 	var beg int
 	for i, r := range src {
-		if !unicode.IsSpace(r) {
-			beg = i
+		if unicode.IsSpace(r) {
+			beg = i + 1
+		} else {
 			break
 		}
 	}
@@ -210,5 +232,96 @@ func (t *Tokenizer) nextHeader() bool {
 	}
 	t.commitLine()
 
+	return true
+}
+
+var (
+	codeBound = []byte("```")
+)
+
+// checkCodeBound returns -1 if bound is not found, otherwise returns index of symbol just after ```
+func checkCodeBound(line []byte) int {
+	pos := bytes.Index(line, codeBound)
+	if pos < 0 || pos > 3 {
+		return -1
+	}
+	pos += 3
+	rest := []rune(string(line[pos:]))
+	for _, r := range rest {
+		if !unicode.IsSpace(r) {
+			return -1
+		}
+	}
+	return pos
+}
+
+func (t *Tokenizer) nextCode() bool {
+	if !t.passWhitespaces() {
+		return false
+	}
+
+	bbb := []rune(string(t.curLine))
+	spaces, rest := passHeadSpaces(bbb)
+	body := throwTrailingSpaces(rest)
+	if len(spaces) > 3 {
+		return false
+	}
+	if !strings.HasPrefix(string(rest), "```") {
+		return false
+	}
+
+	// OK, it is looks like the fenced code block, getting syntax
+	tail := body[3:]
+	sss, syntax := passHeadSpaces(tail)
+	if len(syntax) == 0 {
+		t.appendWarn(t.lin, len(spaces)+3, "code block syntax (language) name required")
+	}
+
+	buf := &bytes.Buffer{}
+	lin := t.lin
+	var col int
+	for {
+		if !t.scan.Scan() {
+			t.err = t.locReport(t.lin, len(spaces), "unclosed code block")
+			return false
+		}
+		lin++
+		col = checkCodeBound(t.scan.Bytes())
+		if col > 0 {
+			break
+		}
+		buf.Write(t.scan.Bytes())
+		buf.WriteByte('\n')
+	}
+
+	t.token = Code{
+		Location: Location{
+			Lin:  t.lin,
+			Col:  len(spaces),
+			XLin: lin,
+			XCol: col,
+		},
+		Syntax: String{
+			Location: Location{
+				Lin:  t.lin,
+				Col:  len(spaces) + 3 + len(sss),
+				XLin: t.lin,
+				XCol: len(spaces) + len(body),
+			},
+			Value: string(syntax),
+		},
+		Content: String{
+			Location: Location{
+				Lin:  t.lin + 1,
+				Col:  0,
+				XLin: lin,
+				XCol: 0,
+			},
+			Value: buf.String(),
+		},
+	}
+	t.lin = lin
+	t.col = col
+	t.commitLine()
 	return true
 }
