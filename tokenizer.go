@@ -39,10 +39,7 @@ type Code struct {
 }
 
 // Comment represents everything else
-type Comment struct {
-	Location
-	Content String
-}
+type Comment String
 
 // Tokenizer serializes input stream into the set of tokens
 type Tokenizer struct {
@@ -54,34 +51,46 @@ type Tokenizer struct {
 	err   error
 	warns []error
 
+	comment struct {
+		ready bool
+		data  *bytes.Buffer
+		lin   int
+		col   int
+		xlin  int
+		xcol  int
+	}
+
 	// location
 	lin int
 	col int
 }
 
+// careLen computes an offset in visible letters, i.e. \t → 4 characters
+func careLen(src []rune) int {
+	res := 0
+	for _, r := range src {
+		switch r {
+		case '\t':
+			res += 4
+		case '\r':
+			res = 0
+		default:
+			res++
+		}
+	}
+	return res
+}
+
 // NewTokenizer constructor
 func NewTokenizer(input []byte) *Tokenizer {
+	input = bytes.Replace(input, []byte("\r"), []byte{}, -1)
+	input = bytes.Replace(input, []byte("\t"), []byte("    "), -1)
 	res := &Tokenizer{
 		input: input,
 		scan:  bufio.NewScanner(bytes.NewReader(input)),
 		lin:   -1,
 	}
-	in := []rune(string(input))
-	lin := 0
-	col := 0
-	for _, r := range in {
-		switch r {
-		case '\n':
-			lin++
-			col = 0
-		case '\t':
-			res.locReport(lin, col, "tabulations are not allowed, convert them to spaces")
-		case '\r':
-			res.locReport(lin, col, "\\r symbols are not allowed, remove them")
-		default:
-			col++
-		}
-	}
+	res.comment.data = &bytes.Buffer{}
 	return res
 }
 
@@ -96,16 +105,79 @@ func (t *Tokenizer) Warnings() []error {
 }
 
 // Next checks if something to be extracted left
-func (t *Tokenizer) Next() bool {
+func (t *Tokenizer) Next() (ok bool) {
 	if t.err != nil {
 		return false
 	}
-	return t.nextHeader() || t.nextCode() // || t.nextComment()
+	if t.token != nil {
+		return true
+	}
+	var lineBreak bool
+	for {
+		if t.curLine == nil {
+			lineBreak, ok = t.passWhitespaces()
+			if !ok {
+				if t.comment.ready {
+					t.commitComment()
+					return true
+				}
+				return false
+			}
+		}
+		res := t.nextHeader() || t.nextCode()
+		if res {
+			return res
+		}
+		if !t.comment.ready {
+			t.comment.ready = true
+			t.comment.lin = t.lin
+			t.comment.col = t.col
+		}
+		if lineBreak {
+			t.comment.data.WriteByte('\n')
+		}
+		t.comment.data.Write(t.curLine)
+		t.comment.data.WriteByte('\n')
+		t.comment.xlin = t.lin
+		t.comment.xcol = careLen([]rune(string(t.curLine)))
+		t.commitLine()
+	}
+	return true
+}
+
+func (t *Tokenizer) commitComment() {
+	t.comment.ready = false
+	t.token = Comment{
+		Location: Location{
+			Lin:  t.comment.lin,
+			Col:  t.comment.col,
+			XLin: t.lin,
+			XCol: t.col,
+		},
+		Value: t.comment.data.String(),
+	}
+	t.comment.data.Reset()
 }
 
 // Token returns token extracted with
 func (t *Tokenizer) Token() interface{} {
-	return t.token
+	if t.comment.ready {
+		res := Comment{
+			Location: Location{
+				Lin:  t.comment.lin,
+				Col:  t.comment.col,
+				XLin: t.comment.xlin,
+				XCol: t.comment.xcol,
+			},
+			Value: t.comment.data.String(),
+		}
+		t.comment.data.Reset()
+		t.comment.ready = false
+		return res
+	}
+	res := t.token
+	t.token = nil
+	return res
 }
 
 func (t *Tokenizer) commitLine() {
@@ -144,11 +216,12 @@ func throwTrailingSpaces(src []rune) (res []rune) {
 	return src[:beg]
 }
 
-// passing whitespaces
-func (t *Tokenizer) passWhitespaces() bool {
-	if t.curLine != nil {
-		return true
-	}
+// passing whitespaces:
+//
+// 1. is only called when curLine == nil
+// 2. passing empty lines (signal if passed any)
+// 3. return false if no line was read
+func (t *Tokenizer) passWhitespaces() (passedEmpty bool, ok bool) {
 	// If the previous line was read out and processed t.curLine must be set to nil
 	for t.scan.Scan() {
 		t.lin++
@@ -156,12 +229,14 @@ func (t *Tokenizer) passWhitespaces() bool {
 		for _, r := range []rune(t.scan.Text()) {
 			if !unicode.IsSpace(r) {
 				t.curLine = t.scan.Bytes()
-				return true
+				ok = true
+				return
 			}
 		}
+		passedEmpty = true
 	}
 	t.err = t.scan.Err()
-	return false
+	return
 }
 
 func (t *Tokenizer) locErr(lin int, col int, err error) error {
@@ -181,35 +256,34 @@ func (t *Tokenizer) appendWarn(lin, col int, format string, a ...interface{}) {
 }
 
 func (t *Tokenizer) nextHeader() bool {
-	if !t.passWhitespaces() {
-		return false
-	}
-
-	pos := bytes.IndexByte(t.curLine, '#')
+	veryHead, rest := passHeadSpaces([]rune(string(t.curLine)))
+	pos := careLen(veryHead)
 	if pos < 0 {
 		return false
 	}
 	if pos > 3 {
 		return false
 	}
+	if len(rest) == 0 || rest[0] != '#' {
+		return false
+	}
 
-	nextPos := bytes.IndexFunc(
-		t.curLine[pos:],
-		func(r rune) bool {
-			return r != '#'
-		},
-	)
+	nextPos := -1
+	for i, r := range rest {
+		if r != '#' {
+			nextPos = i
+			break
+		}
+	}
 	if nextPos > 6 {
 		t.err = t.locReport(t.lin, pos, "header level limit exceeded: %d, cannot be greater than 6", nextPos)
 		return false
 	}
 	if pos > 0 {
 		t.appendWarn(t.lin, pos, `please align this line to the left border`)
-		return false
 	}
 
-	rest := []rune(string(t.curLine[pos+nextPos:]))
-	spaces, tail := passHeadSpaces(rest)
+	spaces, tail := passHeadSpaces(rest[nextPos:])
 	body := throwTrailingSpaces(tail)
 
 	t.token = Header{
@@ -217,14 +291,14 @@ func (t *Tokenizer) nextHeader() bool {
 			Lin:  t.lin,
 			Col:  pos + t.col,
 			XLin: t.lin,
-			XCol: t.col + pos + nextPos + len(spaces) + len(body),
+			XCol: t.col + pos + nextPos + careLen(spaces) + careLen(body),
 		},
 		Content: String{
 			Location: Location{
 				Lin:  t.lin,
-				Col:  t.col + pos + nextPos + len(spaces),
+				Col:  t.col + pos + nextPos + careLen(spaces),
 				XLin: t.lin,
-				XCol: t.col + pos + nextPos + len(spaces) + len(body),
+				XCol: t.col + pos + nextPos + careLen(spaces) + careLen(body),
 			},
 			Value: string(body),
 		},
@@ -242,7 +316,11 @@ var (
 // checkCodeBound returns -1 if bound is not found, otherwise returns index of symbol just after ```
 func checkCodeBound(line []byte) int {
 	pos := bytes.Index(line, codeBound)
-	if pos < 0 || pos > 3 {
+	if pos < 0 {
+		return -1
+	}
+	pos = careLen([]rune(string([]byte(line[:pos]))))
+	if pos > 3 {
 		return -1
 	}
 	pos += 3
@@ -256,14 +334,10 @@ func checkCodeBound(line []byte) int {
 }
 
 func (t *Tokenizer) nextCode() bool {
-	if !t.passWhitespaces() {
-		return false
-	}
-
 	bbb := []rune(string(t.curLine))
 	spaces, rest := passHeadSpaces(bbb)
 	body := throwTrailingSpaces(rest)
-	if len(spaces) > 3 {
+	if careLen(spaces) > 3 {
 		return false
 	}
 	if !strings.HasPrefix(string(rest), "```") {
@@ -273,23 +347,27 @@ func (t *Tokenizer) nextCode() bool {
 	// OK, it is looks like the fenced code block, getting syntax
 	tail := body[3:]
 	sss, syntax := passHeadSpaces(tail)
-	if len(syntax) == 0 {
-		t.appendWarn(t.lin, len(spaces)+3, "code block syntax (language) name required")
+	if careLen(syntax) == 0 {
+		t.appendWarn(t.lin, careLen(spaces)+3, "code block syntax (language) name required")
 	}
 
 	buf := &bytes.Buffer{}
+	codeLin := t.lin
+	var codeCol int
 	lin := t.lin
 	var col int
 	for {
 		if !t.scan.Scan() {
-			t.err = t.locReport(t.lin, len(spaces), "unclosed code block")
+			t.err = t.locReport(t.lin, careLen(spaces), "unclosed code block")
 			return false
 		}
 		lin++
 		col = checkCodeBound(t.scan.Bytes())
-		if col > 0 {
+		if col >= 0 {
 			break
 		}
+		codeCol = careLen(throwTrailingSpaces([]rune(t.scan.Text())))
+		codeLin++
 		buf.Write(t.scan.Bytes())
 		buf.WriteByte('\n')
 	}
@@ -297,16 +375,16 @@ func (t *Tokenizer) nextCode() bool {
 	t.token = Code{
 		Location: Location{
 			Lin:  t.lin,
-			Col:  len(spaces),
+			Col:  careLen(spaces),
 			XLin: lin,
 			XCol: col,
 		},
 		Syntax: String{
 			Location: Location{
 				Lin:  t.lin,
-				Col:  len(spaces) + 3 + len(sss),
+				Col:  careLen(spaces) + 3 + careLen(sss),
 				XLin: t.lin,
-				XCol: len(spaces) + len(body),
+				XCol: careLen(spaces) + careLen(body),
 			},
 			Value: string(syntax),
 		},
@@ -314,14 +392,14 @@ func (t *Tokenizer) nextCode() bool {
 			Location: Location{
 				Lin:  t.lin + 1,
 				Col:  0,
-				XLin: lin,
-				XCol: 0,
+				XLin: codeLin,
+				XCol: codeCol,
 			},
 			Value: buf.String(),
 		},
 	}
-	t.lin = lin
-	t.col = col
+	t.lin = codeLin
+	t.col = codeCol
 	t.commitLine()
 	return true
 }
