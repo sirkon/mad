@@ -265,37 +265,6 @@ func TestTokenizerSeveralLines(t *testing.T) {
 	require.Len(t, tz.Warnings(), 1)
 }
 
-var (
-	tokenCodeSimplest = func(lin, col int, syntax string) Code {
-		return Code{
-			Location: Location{
-				Lin:  lin,
-				Col:  col,
-				XLin: lin + 1,
-				XCol: 3,
-			},
-			Syntax: String{
-				Location: Location{
-					Lin:  lin,
-					Col:  col + 4,
-					XLin: lin,
-					XCol: col + 4 + len(syntax),
-				},
-				Value: syntax,
-			},
-			Content: String{
-				Location: Location{
-					Lin:  lin + 1,
-					Col:  0,
-					XLin: lin + 1,
-					XCol: 0,
-				},
-				Value: "",
-			},
-		}
-	}
-)
-
 func TestTokenizerCodeBlockRealWorld(t *testing.T) {
 	input := strings.Join([]string{
 		"",
