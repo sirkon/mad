@@ -8,7 +8,7 @@ import (
 	"unicode"
 )
 
-// Location is a Token position in an input stream
+// Location is a getToken position in an input stream
 type Location struct {
 	Lin int
 	Col int
@@ -41,8 +41,8 @@ type Code struct {
 // Comment represents everything else
 type Comment String
 
-// Tokenizer serializes input stream into the set of tokens
-type Tokenizer struct {
+// tokenizer serializes input stream into the set of tokens
+type tokenizer struct {
 	input   []byte
 	scan    *bufio.Scanner
 	curLine []byte
@@ -81,11 +81,11 @@ func careLen(src []rune) int {
 	return res
 }
 
-// NewTokenizer constructor
-func NewTokenizer(input []byte) *Tokenizer {
+// newTokenizer constructor
+func newTokenizer(input []byte) *tokenizer {
 	input = bytes.Replace(input, []byte("\r"), []byte{}, -1)
 	input = bytes.Replace(input, []byte("\t"), []byte("    "), -1)
-	res := &Tokenizer{
+	res := &tokenizer{
 		input: input,
 		scan:  bufio.NewScanner(bytes.NewReader(input)),
 		lin:   -1,
@@ -94,18 +94,18 @@ func NewTokenizer(input []byte) *Tokenizer {
 	return res
 }
 
-// Err returns error status. It is guaranteed Err can only return error if the previous Next call returned false
-func (t *Tokenizer) Err() error {
+// Err returns error status. It is guaranteed Err can only return error if the previous next call returned false
+func (t *tokenizer) Err() error {
 	return t.err
 }
 
 // Warnings return list of warnings
-func (t *Tokenizer) Warnings() []error {
+func (t *tokenizer) Warnings() []error {
 	return t.warns
 }
 
-// Next checks if something to be extracted left
-func (t *Tokenizer) Next() (ok bool) {
+// next checks if something to be extracted left
+func (t *tokenizer) next() (ok bool) {
 	if t.err != nil {
 		return false
 	}
@@ -145,7 +145,7 @@ func (t *Tokenizer) Next() (ok bool) {
 	return true
 }
 
-func (t *Tokenizer) commitComment() {
+func (t *tokenizer) commitComment() {
 	t.comment.ready = false
 	t.token = Comment{
 		Location: Location{
@@ -159,8 +159,8 @@ func (t *Tokenizer) commitComment() {
 	t.comment.data.Reset()
 }
 
-// Token returns token extracted with. Next readout will return nil
-func (t *Tokenizer) Token() interface{} {
+// getToken returns token extracted with. next readout will return nil
+func (t *tokenizer) getToken() interface{} {
 	if t.comment.ready {
 		res := Comment{
 			Location: Location{
@@ -180,7 +180,7 @@ func (t *Tokenizer) Token() interface{} {
 	return res
 }
 
-func (t *Tokenizer) commitLine() {
+func (t *tokenizer) commitLine() {
 	t.curLine = nil
 }
 
@@ -221,7 +221,7 @@ func throwTrailingSpaces(src []rune) (res []rune) {
 // 1. is only called when curLine == nil
 // 2. passing empty lines (signal if passed any)
 // 3. return false if no line was read
-func (t *Tokenizer) passWhitespaces() (passedEmpty bool, ok bool) {
+func (t *tokenizer) passWhitespaces() (passedEmpty bool, ok bool) {
 	// If the previous line was read out and processed t.curLine must be set to nil
 	for t.scan.Scan() {
 		t.lin++
@@ -239,23 +239,23 @@ func (t *Tokenizer) passWhitespaces() (passedEmpty bool, ok bool) {
 	return
 }
 
-func (t *Tokenizer) locErr(lin int, col int, err error) error {
+func (t *tokenizer) locErr(lin int, col int, err error) error {
 	return fmt.Errorf("%d:%d: %s", lin, col, err)
 }
 
-func (t *Tokenizer) locReport(lin int, col int, format string, a ...interface{}) error {
+func (t *tokenizer) locReport(lin int, col int, format string, a ...interface{}) error {
 	return t.locErr(lin, col, fmt.Errorf(format, a...))
 }
 
-func (t *Tokenizer) appendWarnErr(lin, col int, err error) {
+func (t *tokenizer) appendWarnErr(lin, col int, err error) {
 	t.warns = append(t.warns, t.locErr(lin, col, err))
 }
 
-func (t *Tokenizer) appendWarn(lin, col int, format string, a ...interface{}) {
+func (t *tokenizer) appendWarn(lin, col int, format string, a ...interface{}) {
 	t.warns = append(t.warns, t.locReport(lin, col, format, a...))
 }
 
-func (t *Tokenizer) nextHeader() bool {
+func (t *tokenizer) nextHeader() bool {
 	veryHead, rest := passHeadSpaces([]rune(string(t.curLine)))
 	pos := careLen(veryHead)
 	if pos < 0 {
@@ -333,7 +333,7 @@ func checkCodeBound(line []byte) int {
 	return pos
 }
 
-func (t *Tokenizer) nextCode() bool {
+func (t *tokenizer) nextCode() bool {
 	bbb := []rune(string(t.curLine))
 	spaces, rest := passHeadSpaces(bbb)
 	body := throwTrailingSpaces(rest)
@@ -404,83 +404,41 @@ func (t *Tokenizer) nextCode() bool {
 	return true
 }
 
-// TokenStream is an iterator with confirmation: you won't scan over underlying tokenizer until you have confirmed
-// token readout.
-// Example:
-//
-// package main
-//
-// import (
-// 	"fmt"
-// 	"strings"
-//
-// 	"github.com/sirkon/mad"
-// )
-//
-// func main() {
-// 	t := mad.NewTokenizer([]byte(strings.Join([]string{
-// 		"# header",
-// 		"comment",
-// 	}, "\n")))
-// 	tt := mad.NewTokenStream(t)
-// 	var tokens []interface{}
-// 	for i := 0; i < 3; i++ {
-// 		if !tt.Next() {
-// 			panic("next must return values")
-// 		}
-// 		tokens = append(tokens, tt.Token())
-// 	}
-// 	for tt.Next() {
-// 		tokens = append(tokens, tt.Token())
-// 		tt.Commit()
-// 	}
-// 	if len(tokens) != 5 {
-// 		panic(fmt.Errorf("must be 5 tokens in the list, got %d", len(tokens)))
-// 	}
-// 	for _, t := range tokens {
-// 		fmt.Printf("%T\n", t)
-// 	}
-// }
-// // will output:
-// //
-// // mad.Header
-// // mad.Header
-// // mad.Header
-// // mad.Header
-// // mad.Comment
-type TokenStream struct {
-	t         *Tokenizer
+// Tokenizer ...
+type Tokenizer struct {
+	t         *tokenizer
 	confirmed bool
 	token     interface{}
 }
 
-// NewTokenStream ...
-func NewTokenStream(t *Tokenizer) *TokenStream {
-	return &TokenStream{
+// NewTokenizer ...
+func NewTokenizer(input []byte) *Tokenizer {
+	t := newTokenizer(input)
+	return &Tokenizer{
 		t:         t,
 		confirmed: true,
 	}
 }
 
-// Next moves underlying tokenizer to its next
-func (ts *TokenStream) Next() bool {
+// next moves underlying tokenizer to its next
+func (ts *Tokenizer) Next() bool {
 	if !ts.confirmed {
 		return true
 	}
 	ts.confirmed = false
-	return ts.t.Next()
+	return ts.t.next()
 }
 
-// Token returns token from underlying tokenizer
-func (ts *TokenStream) Token() interface{} {
+// getToken returns token from underlying tokenizer
+func (ts *Tokenizer) Token() interface{} {
 	if ts.token == nil {
-		ts.token = ts.t.Token()
+		ts.token = ts.t.getToken()
 	}
 	return ts.token
 }
 
 // Commit confirms token read out
-func (ts *TokenStream) Commit() {
+func (ts *Tokenizer) Commit() {
 	ts.confirmed = true
 	ts.token = nil
 }

@@ -238,10 +238,10 @@ func TestTokeniserLine(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tz := NewTokenizer([]byte(tt.input))
-			require.Equal(t, tt.scan, tz.Next())
-			require.Equal(t, tt.token, tz.Token())
-			require.False(t, tz.Next())
+			tz := newTokenizer([]byte(tt.input))
+			require.Equal(t, tt.scan, tz.next())
+			require.Equal(t, tt.token, tz.getToken())
+			require.False(t, tz.next())
 			require.Empty(t, tz.Warnings())
 		})
 	}
@@ -249,7 +249,7 @@ func TestTokeniserLine(t *testing.T) {
 
 func TestTokenizerSeveralLines(t *testing.T) {
 	inputList := []string{"#header", "", " #header", "## хеадер", "#  хе д р    "}
-	tz := NewTokenizer([]byte(strings.Join(inputList, "\n")))
+	tz := newTokenizer([]byte(strings.Join(inputList, "\n")))
 	samples := []Header{
 		tokenHeaderSimplest(0, 0),
 		tokenHeaderSimplest(2, 1),
@@ -257,8 +257,8 @@ func TestTokenizerSeveralLines(t *testing.T) {
 		tokenHeaderHardest(4),
 	}
 	var i = 0
-	for tz.Next() {
-		token := tz.Token()
+	for tz.next() {
+		token := tz.getToken()
 		require.Equal(t, samples[i], token)
 		i++
 	}
@@ -274,8 +274,8 @@ func TestTokenizerCodeBlockRealWorld(t *testing.T) {
 		"```",
 	}, "\n")
 
-	tz := NewTokenizer([]byte(input))
-	require.True(t, tz.Next())
+	tz := newTokenizer([]byte(input))
+	require.True(t, tz.next())
 	require.Empty(t, tz.Warnings())
 	require.Equal(t,
 		Code{
@@ -304,7 +304,7 @@ func TestTokenizerCodeBlockRealWorld(t *testing.T) {
 				Value: "SELECT 1, 2, 3 FROM a\nWHERE date > '2017-06-01'\n",
 			},
 		},
-		tz.Token())
+		tz.getToken())
 }
 
 func TestTokenizerRealWorld(t *testing.T) {
@@ -321,10 +321,10 @@ func TestTokenizerRealWorld(t *testing.T) {
 		"```",
 	}
 	input := strings.Join(sample, "\n")
-	tz := NewTokenizer([]byte(input))
+	tz := newTokenizer([]byte(input))
 	var tokens []interface{}
-	for tz.Next() {
-		tokens = append(tokens, tz.Token())
+	for tz.next() {
+		tokens = append(tokens, tz.getToken())
 	}
 	require.Equal(t, []interface{}{
 		Comment{
@@ -380,8 +380,7 @@ func TestTokenStream(t *testing.T) {
 		"# header",
 		"comment",
 	}
-	tt := NewTokenizer([]byte(strings.Join(input, "\n")))
-	ttt := NewTokenStream(tt)
+	ttt := NewTokenizer([]byte(strings.Join(input, "\n")))
 	var tokens []interface{}
 	for i := 0; i < 3; i++ {
 		require.True(t, ttt.Next())
