@@ -28,8 +28,8 @@ if err := mad.Unmarshal(input, &metric); err != nil {
 ``` 
 of course we could use other structured formats suitable for humans, such as YAML, but:
 
-1. Its toolset is nowhere near as developed as Markdown support. Specifically, there's no syntax aware highlighting for 
-code blocks and this is really matters in case such as ours.
+1. Its toolset is nowhere near as developed as Markdown support, where you have syntax
+highlighting, folding, etc for fenced code blocks (VSCode on Ubuntu 17.10 in this example).
 2. YAML unmarshaller is a bit too allowing. We wanted to get an error when we declare a non-pointer field 
     ```go
     type Metric struct {
