@@ -159,7 +159,7 @@ func (t *Tokenizer) commitComment() {
 	t.comment.data.Reset()
 }
 
-// Token returns token extracted with
+// Token returns token extracted with. Next readout will return nil
 func (t *Tokenizer) Token() interface{} {
 	if t.comment.ready {
 		res := Comment{
@@ -402,4 +402,85 @@ func (t *Tokenizer) nextCode() bool {
 	t.col = codeCol
 	t.commitLine()
 	return true
+}
+
+// TokenStream is an iterator with confirmation: you won't scan over underlying tokenizer until you have confirmed
+// token readout.
+// Example:
+//
+// package main
+//
+// import (
+// 	"fmt"
+// 	"strings"
+//
+// 	"github.com/sirkon/mad"
+// )
+//
+// func main() {
+// 	t := mad.NewTokenizer([]byte(strings.Join([]string{
+// 		"# header",
+// 		"comment",
+// 	}, "\n")))
+// 	tt := mad.NewTokenStream(t)
+// 	var tokens []interface{}
+// 	for i := 0; i < 3; i++ {
+// 		if !tt.Next() {
+// 			panic("next must return values")
+// 		}
+// 		tokens = append(tokens, tt.Token())
+// 	}
+// 	for tt.Next() {
+// 		tokens = append(tokens, tt.Token())
+// 		tt.Commit()
+// 	}
+// 	if len(tokens) != 5 {
+// 		panic(fmt.Errorf("must be 5 tokens in the list, got %d", len(tokens)))
+// 	}
+// 	for _, t := range tokens {
+// 		fmt.Printf("%T\n", t)
+// 	}
+// }
+// // will output:
+// //
+// // mad.Header
+// // mad.Header
+// // mad.Header
+// // mad.Header
+// // mad.Comment
+type TokenStream struct {
+	t         *Tokenizer
+	confirmed bool
+	token     interface{}
+}
+
+// NewTokenStream ...
+func NewTokenStream(t *Tokenizer) *TokenStream {
+	return &TokenStream{
+		t:         t,
+		confirmed: true,
+	}
+}
+
+// Next moves underlying tokenizer to its next
+func (ts *TokenStream) Next() bool {
+	if !ts.confirmed {
+		return true
+	}
+	ts.confirmed = false
+	return ts.t.Next()
+}
+
+// Token returns token from underlying tokenizer
+func (ts *TokenStream) Token() interface{} {
+	if ts.token == nil {
+		ts.token = ts.t.Token()
+	}
+	return ts.token
+}
+
+// Commit confirms token read out
+func (ts *TokenStream) Commit() {
+	ts.confirmed = true
+	ts.token = nil
 }

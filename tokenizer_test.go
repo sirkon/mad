@@ -374,3 +374,30 @@ func TestTokenizerRealWorld(t *testing.T) {
 		},
 	}, tokens)
 }
+
+func TestTokenStream(t *testing.T) {
+	input := []string{
+		"# header",
+		"comment",
+	}
+	tt := NewTokenizer([]byte(strings.Join(input, "\n")))
+	ttt := NewTokenStream(tt)
+	var tokens []interface{}
+	for i := 0; i < 3; i++ {
+		require.True(t, ttt.Next())
+		token := ttt.Token()
+		tokens = append(tokens, token)
+		if i == 0 {
+			require.IsType(t, Header{}, token)
+		} else {
+			require.Equal(t, tokens[0], token)
+		}
+	}
+	for ttt.Next() {
+		tokens = append(tokens, ttt.Token())
+		ttt.Commit()
+	}
+	require.Len(t, tokens, 5)
+	require.Equal(t, tokens[0], tokens[3])
+	require.IsType(t, Comment{}, tokens[4])
+}
