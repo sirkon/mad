@@ -322,7 +322,7 @@ func TestTokenizerRealWorld(t *testing.T) {
 	}
 	input := strings.Join(sample, "\n")
 	tz := NewTokenizer([]byte(input))
-	tokens := []interface{}{}
+	var tokens []interface{}
 	for tz.Next() {
 		tokens = append(tokens, tz.Token())
 	}
