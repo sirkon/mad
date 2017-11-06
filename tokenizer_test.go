@@ -375,6 +375,27 @@ func TestTokenizerRealWorld(t *testing.T) {
 	}, tokens)
 }
 
+func TestTabProcessing(t *testing.T) {
+	tz := newTokenizer([]byte("#\theader"))
+	require.True(t, tz.next())
+	token := tz.getToken()
+	require.False(t, tz.next())
+	require.Equal(t, Header{
+		Location: Location{
+			Col:  0,
+			XCol: 11,
+		},
+		Level: 1,
+		Content: String{
+			Location: Location{
+				Col:  5,
+				XCol: 11,
+			},
+			Value: "header",
+		},
+	}, token)
+}
+
 func TestTokenStream(t *testing.T) {
 	input := []string{
 		"# header",
