@@ -50,22 +50,23 @@ func (l *Listener) EnterEoc(c *EocContext) {}
 
 // EnterLine adds identifier as a header
 func (l *Listener) EnterLine(c *LineContext) {
+	lin, col := l.pos(c.IDENTIFIER().GetSymbol())
 	l.storage.Header(
-		l.lin+c.IDENTIFIER().GetSymbol().GetLine(),
-		l.col+c.IDENTIFIER().GetSymbol().GetColumn(),
+		lin,
+		col,
 		c.IDENTIFIER().GetText(),
 	)
 }
 
-func pos(token antlr.Token) (lin int, col int) {
-	return token.GetLine(), token.GetColumn()
+func (l *Listener) pos(token antlr.Token) (lin int, col int) {
+	return l.lin + token.GetLine() - 1, l.col + token.GetColumn()
 }
 
 // EnterValue ...
 func (l *Listener) EnterValue(c *ValueContext) {
 	switch {
 	case c.STRING_LITERAL() != nil:
-		lin, col := pos(c.STRING_LITERAL().GetSymbol())
+		lin, col := l.pos(c.STRING_LITERAL().GetSymbol())
 		text := c.STRING_LITERAL().GetText()
 		text = strings.Replace(text, "\\\"", "\"", -1)
 		text = strings.Replace(text, "\\'", "'", -1)
@@ -76,13 +77,13 @@ func (l *Listener) EnterValue(c *ValueContext) {
 		text = strings.Replace(text, "\\f", "\f", -1)
 		l.storage.ValueString(lin, col, text[1:len(text)-1])
 	case c.NUMBER() != nil:
-		lin, col := pos(c.NUMBER().GetSymbol())
+		lin, col := l.pos(c.NUMBER().GetSymbol())
 		l.storage.ValueNumber(lin, col, c.NUMBER().GetText())
 	case c.INLINE_STRING() != nil:
-		lin, col := pos(c.INLINE_STRING().GetSymbol())
+		lin, col := l.pos(c.INLINE_STRING().GetSymbol())
 		l.storage.ValueString(lin, col, c.INLINE_STRING().GetText())
 	case c.IDENTIFIER() != nil:
-		lin, col := pos(c.IDENTIFIER().GetSymbol())
+		lin, col := l.pos(c.IDENTIFIER().GetSymbol())
 		l.storage.ValueString(lin, col, c.IDENTIFIER().GetText())
 	}
 
@@ -102,7 +103,7 @@ func (l *Listener) ExitValue(c *ValueContext) {}
 
 // EnterBoolean ...
 func (l *Listener) EnterBoolean(c *BooleanContext) {
-	lin, col := pos(c.GetStart())
+	lin, col := l.pos(c.GetStart())
 	l.storage.Boolean(lin, col, c.GetText())
 }
 
