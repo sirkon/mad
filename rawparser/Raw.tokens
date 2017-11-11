@@ -1,0 +1,14 @@
+T__0=1
+T__1=2
+T__2=3
+IDENTIFIER=4
+STRING_LITERAL=5
+NUMBER=6
+INT=7
+INLINE_STRING=8
+NEWLINE=9
+WS=10
+'='=1
+'true'=2
+'false'=3
+'\n'=9
