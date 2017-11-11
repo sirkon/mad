@@ -4,8 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/sirkon/mad/rawparser"
 )
 
 // Location is a getToken position in an input stream
@@ -398,30 +401,37 @@ func (t *tokenizer) nextCode() bool {
 			Value: buf.String(),
 		},
 	}
-	t.lin = codeLin
+	t.lin = codeLin + 1
 	t.col = codeCol
 	t.commitLine()
 	return true
 }
 
-// Tokenizer ...
-type Tokenizer struct {
+// Tokenizer abstraction
+type Tokenizer interface {
+	Next() bool
+	Token() interface{}
+	Confirm()
+}
+
+// MDTokenizer is a markdown level tokenizer
+type MDTokenizer struct {
 	t         *tokenizer
 	confirmed bool
 	token     interface{}
 }
 
 // NewTokenizer ...
-func NewTokenizer(input []byte) *Tokenizer {
+func NewTokenizer(input []byte) *MDTokenizer {
 	t := newTokenizer(input)
-	return &Tokenizer{
+	return &MDTokenizer{
 		t:         t,
 		confirmed: true,
 	}
 }
 
 // next moves underlying tokenizer to its next
-func (ts *Tokenizer) Next() bool {
+func (ts *MDTokenizer) Next() bool {
 	if !ts.confirmed {
 		return true
 	}
@@ -430,15 +440,250 @@ func (ts *Tokenizer) Next() bool {
 }
 
 // getToken returns token from underlying tokenizer
-func (ts *Tokenizer) Token() interface{} {
+func (ts *MDTokenizer) Token() interface{} {
 	if ts.token == nil {
 		ts.token = ts.t.getToken()
 	}
 	return ts.token
 }
 
-// Commit confirms token read out
-func (ts *Tokenizer) Commit() {
+// Confirm confirms token read out
+func (ts *MDTokenizer) Confirm() {
 	ts.confirmed = true
 	ts.token = nil
+}
+
+// RawStorage storage for raw parser output
+type RawStorage struct {
+	level  int
+	items  []interface{}
+	errors []error
+}
+
+// NewRawStorage constructor
+func NewRawStorage(level int) *RawStorage {
+	return &RawStorage{
+		level: level,
+	}
+}
+
+func (rs *RawStorage) append(v interface{}) {
+	rs.items = append(rs.items, v)
+}
+
+// Header consumes header
+func (rs *RawStorage) Header(lin, col int, value string) {
+	rs.append(Header{
+		Location: Location{
+			Lin: lin,
+			Col: col,
+		},
+		Content: String{
+			Location: Location{
+				Lin: lin,
+				Col: col,
+			},
+			Value: value,
+		},
+		Level: rs.level,
+	})
+}
+
+// ValueNumber consumes value as number
+func (rs *RawStorage) ValueNumber(lin, col int, value string) {
+	vuint, err := strconv.ParseUint(value, 10, 64)
+	if err == nil {
+		rs.append(Unsigned{
+			Location: Location{
+				Lin: lin,
+				Col: col,
+			},
+			Value: value,
+			Real:  vuint,
+		})
+		return
+	}
+	vint, err := strconv.ParseInt(value, 10, 64)
+	if err == nil {
+		rs.append(Integer{
+			Location: Location{
+				Lin: lin,
+				Col: col,
+			},
+			Value: value,
+			Real:  vint,
+		})
+	}
+	vfloat, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		rs.errors = append(rs.errors, fmt.Errorf("%d:%d: cannot convert `%s` into numeric type", lin+1, col+1, err))
+	} else {
+		rs.append(Float{
+			Location: Location{
+				Lin: lin,
+				Col: col,
+			},
+			Value: value,
+			Real:  vfloat,
+		})
+	}
+}
+
+// ValueString consumes value as string
+func (rs *RawStorage) ValueString(lin, col int, value string) {
+	rs.append(String{
+		Location: Location{
+			Lin: lin,
+			Col: col,
+		},
+		Value: value,
+	})
+}
+
+// Boolean consumes value as boolean
+func (rs *RawStorage) Boolean(lin, col int, value string) {
+	var val bool
+	switch value {
+	case "true":
+		val = true
+	case "false":
+		val = false
+	default:
+		rs.errors = append(rs.errors, fmt.Errorf("%d:%d: not a boolean value", value))
+	}
+	rs.append(Boolean{
+		Location: Location{
+			Lin: lin,
+			Col: col,
+		},
+		Value: value,
+		Real:  val,
+	})
+}
+
+// Data returns collected data
+func (rs *RawStorage) Data() []interface{} {
+	return rs.items
+}
+
+// Err returns collected errors
+func (rs *RawStorage) Err() []error {
+	return rs.errors
+}
+
+type levelInfo struct {
+	real    int
+	nominal int
+}
+
+// FullTokenizer expands fenced blocks for `raw` syntax into the sequence of Header:Value items and 'normalizes' levels.
+// Example of normalization, the following tree structure
+//
+// 1.
+//   5.
+//   2.
+//   2.
+//     4.
+//
+// will be translated into
+//
+// 1.
+//   2.
+//   2.
+//   2.
+//     3.
+type FullTokenizer struct {
+	levels    []levelInfo
+	confirmed bool
+	t7r       Tokenizer
+	rawData   struct {
+		items []interface{}
+		index int
+	}
+	errors []error
+}
+
+// Next ...
+func (f *FullTokenizer) Next() bool {
+	if !f.confirmed {
+		return true
+	}
+	if f.rawData.index < len(f.rawData.items)-1 {
+		f.rawData.index++
+		return true
+	} else {
+		f.rawData.items = nil
+		f.rawData.index = 0
+	}
+	return f.t7r.Next()
+}
+
+func (f *FullTokenizer) curLevel() int {
+	return len(f.levels)
+}
+
+// Token ...
+func (f *FullTokenizer) Token() interface{} {
+	if f.rawData.index < len(f.rawData.items) {
+		return f.rawData.items[f.rawData.index]
+	}
+	res := f.t7r.Token()
+	switch v := res.(type) {
+	case Header:
+		if len(f.levels) == 0 {
+			f.levels = append(f.levels, levelInfo{
+				real:    1,
+				nominal: v.Level,
+			})
+		} else {
+			var i int
+			for i = len(f.levels) - 1; i >= 0; i-- {
+				if f.levels[i].nominal < v.Level {
+					break
+				}
+			}
+			f.levels = f.levels[:i+1]
+			f.levels = append(f.levels, levelInfo{
+				real:    f.curLevel() + 1,
+				nominal: v.Level,
+			})
+		}
+		v.Level = f.curLevel()
+		return v
+	case Code:
+		if v.Syntax.Value != "raw" {
+			return res
+		}
+		// that is the `raw` code block, expanding it
+		storage := NewRawStorage(f.curLevel() + 1)
+		errors := rawparser.Parse(v.Content.Lin, v.Content.Col, v.Content.Value, storage)
+		f.errors = append(f.errors, errors...)
+		f.errors = append(f.errors, storage.errors...)
+		f.rawData.items = storage.Data()
+		f.rawData.index = 0
+		f.t7r.Confirm()
+		return f.rawData.items[0]
+	}
+	return res
+}
+
+// Confirm confirms confirmation in a confirmative way
+func (f *FullTokenizer) Confirm() {
+	if f.rawData.items == nil {
+		f.t7r.Confirm()
+	}
+	f.confirmed = true
+}
+
+// NewFullTokenizer ...
+func NewFullTokenizer(t7r Tokenizer) *FullTokenizer {
+	return &FullTokenizer{
+		t7r:       t7r,
+		confirmed: true,
+	}
+}
+
+// Err returns stack of errors
+func (f *FullTokenizer) Err() []error {
+	return f.errors
 }

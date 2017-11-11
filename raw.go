@@ -9,23 +9,27 @@ All type items here represents allowed items for `raw` fenced code block
 // Integer integer number
 type Integer struct {
 	Location
-	Value int64
+	Value string
+	Real  int64
 }
 
 // Unsigned unsigned integer number
 type Unsigned struct {
 	Location
-	Value uint64
+	Value string
+	Real  uint64
 }
 
 // Float represents floating point number
 type Float struct {
 	Location
-	Value float64
+	Value string
+	Real  float64
 }
 
 // Boolean represents
 type Boolean struct {
 	Location
-	Value bool
+	Value string
+	Real  bool
 }

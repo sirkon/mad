@@ -6,6 +6,7 @@ import (
 
 	"strings"
 
+	"github.com/sirkon/mad/testdata"
 	"github.com/stretchr/testify/require"
 )
 
@@ -415,9 +416,155 @@ func TestTokenStream(t *testing.T) {
 	}
 	for ttt.Next() {
 		tokens = append(tokens, ttt.Token())
-		ttt.Commit()
+		ttt.Confirm()
 	}
 	require.Len(t, tokens, 5)
 	require.Equal(t, tokens[0], tokens[3])
 	require.IsType(t, Comment{}, tokens[4])
+}
+
+func TestFullTokenSteam(t *testing.T) {
+	data, err := testdata.Asset("test.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t1 := NewTokenizer(data)
+	t2 := NewFullTokenizer(t1)
+	var tokens []interface{}
+	for t2.Next() {
+		tokens = append(tokens, t2.Token())
+		t2.Confirm()
+	}
+	require.Equal(t, []interface{}{
+		Header{
+			Location: Location{
+				Lin: 1,
+				Col: 0,
+			},
+			Level: 1,
+			Content: String{
+				Location: Location{
+					Lin: 1,
+					Col: 0,
+				},
+				Value: "a",
+			},
+		},
+		String{
+			Location: Location{
+				Lin: 1,
+				Col: 4,
+			},
+			Value: "1",
+		},
+		Header{
+			Location: Location{
+				Lin:  4,
+				Col:  0,
+				XLin: 4,
+				XCol: 8,
+			},
+			Level: 1,
+			Content: String{
+				Location: Location{
+					Lin:  4,
+					Col:  1,
+					XLin: 4,
+					XCol: 8,
+				},
+				Value: "request",
+			},
+		},
+		Header{
+			Location: Location{
+				Lin: 6,
+				Col: 0,
+			},
+			Level: 2,
+			Content: String{
+				Location: Location{
+					Lin: 6,
+					Col: 0,
+				},
+				Value: "b",
+			},
+		},
+		Unsigned{
+			Location: Location{
+				Lin: 6,
+				Col: 4,
+			},
+			Value: "1",
+			Real:  uint64(1),
+		},
+	}, tokens)
+}
+
+func TestLevelNormalization(t *testing.T) {
+	data, err := testdata.Asset("level_normalization.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t1 := NewTokenizer(data)
+	t2 := NewFullTokenizer(t1)
+	var tokens []interface{}
+	for t2.Next() {
+		tokens = append(tokens, t2.Token())
+		t2.Confirm()
+	}
+	require.Equal(t,
+		[]interface{}{
+			Header{
+				Location: Location{
+					XCol: 6,
+				},
+				Level: 1,
+				Content: String{
+					Location: Location{
+						Col:  4,
+						XCol: 6,
+					},
+					Value: "h1",
+				},
+			},
+
+			Header{
+				Location: Location{
+					Lin:  1,
+					Col:  0,
+					XLin: 1,
+					XCol: 8,
+				},
+				Level: 2,
+				Content: String{
+					Location: Location{
+						Lin:  1,
+						Col:  6,
+						XLin: 1,
+						XCol: 8,
+					},
+					Value: "h2",
+				},
+			},
+
+			Header{
+				Location: Location{
+					Lin:  2,
+					Col:  0,
+					XLin: 2,
+					XCol: 7,
+				},
+				Level: 2,
+				Content: String{
+					Location: Location{
+						Lin:  2,
+						Col:  5,
+						XLin: 2,
+						XCol: 7,
+					},
+					Value: "h3",
+				},
+			},
+		},
+		tokens)
 }
