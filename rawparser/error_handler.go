@@ -29,7 +29,7 @@ func (eh *ErrorHandler) SyntaxError(recognizer antlr.Recognizer, offendingSymbol
 	})
 }
 
-// ReportAmbiguity TODO
+// ReportAmbiguity ...
 func (eh *ErrorHandler) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, exact bool, ambigAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
 	panic("implement me")
 }
@@ -38,7 +38,7 @@ func (eh *ErrorHandler) ReportAmbiguity(recognizer antlr.Parser, dfa *antlr.DFA,
 func (eh *ErrorHandler) ReportAttemptingFullContext(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex int, conflictingAlts *antlr.BitSet, configs antlr.ATNConfigSet) {
 }
 
-// ReportContextSensitivity TODO
+// ReportContextSensitivity ...
 func (eh *ErrorHandler) ReportContextSensitivity(recognizer antlr.Parser, dfa *antlr.DFA, startIndex, stopIndex, prediction int, configs antlr.ATNConfigSet) {
 }
 

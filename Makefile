@@ -1,3 +1,3 @@
 test:
 		PATH=${GOPATH}/bin:${PATH}
-		go test github.com/sirkon/mad
+		go test -test.v github.com/sirkon/mad/...
