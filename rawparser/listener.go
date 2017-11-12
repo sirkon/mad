@@ -8,10 +8,10 @@ import (
 
 // TokenStorage is an abstraction over token storage
 type TokenStorage interface {
-	Header(lin, col int, value string)
-	ValueNumber(lin, col int, value string)
-	ValueString(lin, col int, value string)
-	Boolean(lin, col int, value string)
+	Header(lin, col, xcol int, value string)
+	ValueNumber(lin, col, xcol int, value string)
+	ValueString(lin, col, xcol int, value string)
+	Boolean(lin, col, xcol int, value string)
 }
 
 // Listener implementation of RawListener to scan over raw fenced code blocks
@@ -54,6 +54,7 @@ func (l *Listener) EnterLine(c *LineContext) {
 	l.storage.Header(
 		lin,
 		col,
+		col+len(c.IDENTIFIER().GetText()),
 		c.IDENTIFIER().GetText(),
 	)
 }
@@ -67,6 +68,7 @@ func (l *Listener) EnterValue(c *ValueContext) {
 	switch {
 	case c.STRING_LITERAL() != nil:
 		lin, col := l.pos(c.STRING_LITERAL().GetSymbol())
+		xcol := col + len(c.STRING_LITERAL().GetText())
 		text := c.STRING_LITERAL().GetText()
 		text = strings.Replace(text, "\\\"", "\"", -1)
 		text = strings.Replace(text, "\\'", "'", -1)
@@ -75,16 +77,16 @@ func (l *Listener) EnterValue(c *ValueContext) {
 		text = strings.Replace(text, "\\n", "\n", -1)
 		text = strings.Replace(text, "\\b", "\b", -1)
 		text = strings.Replace(text, "\\f", "\f", -1)
-		l.storage.ValueString(lin, col, text[1:len(text)-1])
+		l.storage.ValueString(lin, col, xcol, text[1:len(text)-1])
 	case c.NUMBER() != nil:
 		lin, col := l.pos(c.NUMBER().GetSymbol())
-		l.storage.ValueNumber(lin, col, c.NUMBER().GetText())
+		l.storage.ValueNumber(lin, col, col+len(c.NUMBER().GetText()), c.NUMBER().GetText())
 	case c.INLINE_STRING() != nil:
 		lin, col := l.pos(c.INLINE_STRING().GetSymbol())
-		l.storage.ValueString(lin, col, c.INLINE_STRING().GetText())
+		l.storage.ValueString(lin, col, col+len(c.INLINE_STRING().GetText()), c.INLINE_STRING().GetText())
 	case c.IDENTIFIER() != nil:
 		lin, col := l.pos(c.IDENTIFIER().GetSymbol())
-		l.storage.ValueString(lin, col, c.IDENTIFIER().GetText())
+		l.storage.ValueString(lin, col, col+len(c.IDENTIFIER().GetText()), c.IDENTIFIER().GetText())
 	}
 
 }
@@ -104,7 +106,7 @@ func (l *Listener) ExitValue(c *ValueContext) {}
 // EnterBoolean ...
 func (l *Listener) EnterBoolean(c *BooleanContext) {
 	lin, col := l.pos(c.GetStart())
-	l.storage.Boolean(lin, col, c.GetText())
+	l.storage.Boolean(lin, col, col+len(c.GetText()), c.GetText())
 }
 
 // ExitBoolean ...

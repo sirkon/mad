@@ -472,16 +472,20 @@ func (rs *RawStorage) append(v interface{}) {
 }
 
 // Header consumes header
-func (rs *RawStorage) Header(lin, col int, value string) {
+func (rs *RawStorage) Header(lin, col, xcol int, value string) {
 	rs.append(Header{
 		Location: Location{
-			Lin: lin,
-			Col: col,
+			Lin:  lin,
+			Col:  col,
+			XLin: lin,
+			XCol: xcol,
 		},
 		Content: String{
 			Location: Location{
-				Lin: lin,
-				Col: col,
+				Lin:  lin,
+				Col:  col,
+				XLin: lin,
+				XCol: xcol,
 			},
 			Value: value,
 		},
@@ -490,13 +494,15 @@ func (rs *RawStorage) Header(lin, col int, value string) {
 }
 
 // ValueNumber consumes value as number
-func (rs *RawStorage) ValueNumber(lin, col int, value string) {
+func (rs *RawStorage) ValueNumber(lin, col, xcol int, value string) {
 	vuint, err := strconv.ParseUint(value, 10, 64)
 	if err == nil {
 		rs.append(Unsigned{
 			Location: Location{
-				Lin: lin,
-				Col: col,
+				Lin:  lin,
+				Col:  col,
+				XLin: lin,
+				XCol: xcol,
 			},
 			Value: value,
 			Real:  vuint,
@@ -507,8 +513,10 @@ func (rs *RawStorage) ValueNumber(lin, col int, value string) {
 	if err == nil {
 		rs.append(Integer{
 			Location: Location{
-				Lin: lin,
-				Col: col,
+				Lin:  lin,
+				Col:  col,
+				XLin: lin,
+				XCol: xcol,
 			},
 			Value: value,
 			Real:  vint,
@@ -520,8 +528,10 @@ func (rs *RawStorage) ValueNumber(lin, col int, value string) {
 	} else {
 		rs.append(Float{
 			Location: Location{
-				Lin: lin,
-				Col: col,
+				Lin:  lin,
+				Col:  col,
+				XLin: lin,
+				XCol: xcol,
 			},
 			Value: value,
 			Real:  vfloat,
@@ -530,18 +540,20 @@ func (rs *RawStorage) ValueNumber(lin, col int, value string) {
 }
 
 // ValueString consumes value as string
-func (rs *RawStorage) ValueString(lin, col int, value string) {
+func (rs *RawStorage) ValueString(lin, col, xcol int, value string) {
 	rs.append(String{
 		Location: Location{
-			Lin: lin,
-			Col: col,
+			Lin:  lin,
+			Col:  col,
+			XLin: lin,
+			XCol: xcol,
 		},
 		Value: value,
 	})
 }
 
 // Boolean consumes value as boolean
-func (rs *RawStorage) Boolean(lin, col int, value string) {
+func (rs *RawStorage) Boolean(lin, col, xcol int, value string) {
 	var val bool
 	switch value {
 	case "true":
@@ -553,8 +565,10 @@ func (rs *RawStorage) Boolean(lin, col int, value string) {
 	}
 	rs.append(Boolean{
 		Location: Location{
-			Lin: lin,
-			Col: col,
+			Lin:  lin,
+			Col:  col,
+			XLin: lin,
+			XCol: xcol,
 		},
 		Value: value,
 		Real:  val,

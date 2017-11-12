@@ -438,22 +438,28 @@ func TestFullTokenSteam(t *testing.T) {
 	require.Equal(t, []interface{}{
 		Header{
 			Location: Location{
-				Lin: 1,
-				Col: 0,
+				Lin:  1,
+				Col:  0,
+				XLin: 1,
+				XCol: 1,
 			},
 			Level: 1,
 			Content: String{
 				Location: Location{
-					Lin: 1,
-					Col: 0,
+					Lin:  1,
+					Col:  0,
+					XLin: 1,
+					XCol: 1,
 				},
 				Value: "a",
 			},
 		},
 		String{
 			Location: Location{
-				Lin: 1,
-				Col: 4,
+				Lin:  1,
+				Col:  4,
+				XLin: 1,
+				XCol: 7,
 			},
 			Value: "1",
 		},
@@ -477,22 +483,28 @@ func TestFullTokenSteam(t *testing.T) {
 		},
 		Header{
 			Location: Location{
-				Lin: 6,
-				Col: 0,
+				Lin:  6,
+				Col:  0,
+				XLin: 6,
+				XCol: 1,
 			},
 			Level: 2,
 			Content: String{
 				Location: Location{
-					Lin: 6,
-					Col: 0,
+					Lin:  6,
+					Col:  0,
+					XLin: 6,
+					XCol: 1,
 				},
 				Value: "b",
 			},
 		},
 		Unsigned{
 			Location: Location{
-				Lin: 6,
-				Col: 4,
+				Lin:  6,
+				Col:  4,
+				XLin: 6,
+				XCol: 5,
 			},
 			Value: "1",
 			Real:  uint64(1),
