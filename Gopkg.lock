@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/antlr/antlr4"
+  packages = ["runtime/Go/antlr"]
+  revision = "d4d7e3d3bc3b65bb00579fe826834a9263fa45e6"
+  version = "4.7"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -22,6 +28,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4987caf4f31af6bbfc9cdaba5b867026538bc314ebb899739d596cf6edbdab1f"
+  inputs-digest = "d6324c702f229cc648d7f30a69128de8e7fb1ff241166640d5d859468934d393"
   solver-name = "gps-cdcl"
   solver-version = 1
