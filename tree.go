@@ -3,20 +3,20 @@ package mad
 // TreeNodeData represents tree node data
 type TreeNodeData struct {
 	Node     *TreeNode
-	Code     *Code
-	Comment  *Comment
-	Integer  *Integer
-	Unsigned *Unsigned
-	Float    *Float
+	Code     *code
+	Comment  *comment
+	Integer  *integer
+	Unsigned *unsigned
+	Float    *float
 	String   *String
-	Boolean  *Boolean
+	Boolean  *boolean
 }
 
 // TreeNode represents tree node:
 //   * It must has a header
 //   * It probably has related data
 type TreeNode struct {
-	Header Header
+	Header header
 	Data   []TreeNodeData
 }
 

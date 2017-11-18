@@ -11,7 +11,13 @@ import (
 	"github.com/sirkon/mad/rawparser"
 )
 
-// Location is a getToken position in an input stream
+// Locatable for tokens that can locate itself
+type Locatable interface {
+	Start() (lin int, col int)
+	Finish() (lin int, col int)
+}
+
+// Finish is a getToken position in an input stream
 type Location struct {
 	Lin int
 	Col int
@@ -21,55 +27,108 @@ type Location struct {
 	XCol int
 }
 
+// Start to implement Locatable
+func (l Location) Start() (lin int, col int) {
+	return l.Lin, l.Col
+}
+
+// Finish to implement Locatable
+func (l Location) Finish() (lin int, col int) {
+	return l.XLin, l.XCol
+}
+
 // String ...
 type String struct {
 	Location
 	Value string
 }
 
-// Header represents header
-type Header struct {
+// String for fmt.Stringer implementation
+func (s String) String() string {
+	return "string"
+}
+
+// header represents header
+type header struct {
 	Location
 	Content String
 	Level   int
 }
 
-// Code represents fenced code block
-type Code struct {
+// String for fmt.Stringer implementation
+func (header) String() string {
+	return "header"
+}
+
+// code represents fenced code block
+type code struct {
 	Location
 	Syntax  String
 	Content String
 }
 
-// Comment represents everything else
-type Comment String
+// String for fmt.Stringer implementation
+func (c code) String() string {
+	if len(c.Syntax.Value) == 0 {
+		return "code"
+	}
+	return fmt.Sprintf("%s code", c.Syntax.Value)
+}
 
-// Integer integer number
-type Integer struct {
+// comment represents everything else
+type comment String
+
+// String for fmt.Stringer implementation
+func (comment) String() string {
+	return "comment"
+}
+
+// integer integer number
+type integer struct {
 	Location
 	Value string
 	Real  int64
 }
 
-// Unsigned unsigned integer number
-type Unsigned struct {
+// String for fmt.Stringer implementation
+func (integer) String() string {
+	return "integer number"
+}
+
+// unsigned unsigned integer number
+type unsigned struct {
 	Location
 	Value string
 	Real  uint64
 }
 
-// Float represents floating point number
-type Float struct {
+// String for fmt.Stringer implementation
+func (unsigned) String() string {
+	return "unsigned number"
+}
+
+// float represents floating point number
+type float struct {
 	Location
 	Value string
 	Real  float64
 }
 
-// Boolean represents
-type Boolean struct {
+// String for fmt.Stringer implementation
+func (float) String() string {
+	return "floating point number"
+}
+
+// boolean represents
+type boolean struct {
 	Location
 	Value string
 	Real  bool
+}
+
+// String for fmt.Stringer implementation
+func (boolean) String() string {
+	return "boolean"
 }
 
 // tokenizer serializes input stream into the set of tokens
@@ -77,7 +136,7 @@ type tokenizer struct {
 	input   []byte
 	scan    *bufio.Scanner
 	curLine []byte
-	token   interface{}
+	token   Locatable
 
 	err   error
 	warns []error
@@ -178,7 +237,7 @@ func (t *tokenizer) next() (ok bool) {
 
 func (t *tokenizer) commitComment() {
 	t.comment.ready = false
-	t.token = Comment{
+	t.token = comment{
 		Location: Location{
 			Lin:  t.comment.lin,
 			Col:  t.comment.col,
@@ -191,9 +250,9 @@ func (t *tokenizer) commitComment() {
 }
 
 // getToken returns token extracted with. next readout will return nil
-func (t *tokenizer) getToken() interface{} {
+func (t *tokenizer) getToken() Locatable {
 	if t.comment.ready {
-		res := Comment{
+		res := comment{
 			Location: Location{
 				Lin:  t.comment.lin,
 				Col:  t.comment.col,
@@ -317,7 +376,7 @@ func (t *tokenizer) nextHeader() bool {
 	spaces, tail := passHeadSpaces(rest[nextPos:])
 	body := throwTrailingSpaces(tail)
 
-	t.token = Header{
+	t.token = header{
 		Location: Location{
 			Lin:  t.lin,
 			Col:  pos + t.col,
@@ -403,7 +462,7 @@ func (t *tokenizer) nextCode() bool {
 		buf.WriteByte('\n')
 	}
 
-	t.token = Code{
+	t.token = code{
 		Location: Location{
 			Lin:  t.lin,
 			Col:  careLen(spaces),
@@ -438,7 +497,7 @@ func (t *tokenizer) nextCode() bool {
 // Tokenizer abstraction
 type Tokenizer interface {
 	Next() bool
-	Token() interface{}
+	Token() Locatable
 	Confirm()
 }
 
@@ -446,7 +505,7 @@ type Tokenizer interface {
 type MDTokenizer struct {
 	t         *tokenizer
 	confirmed bool
-	token     interface{}
+	token     Locatable
 }
 
 // NewTokenizer ...
@@ -468,7 +527,7 @@ func (ts *MDTokenizer) Next() bool {
 }
 
 // getToken returns token from underlying tokenizer
-func (ts *MDTokenizer) Token() interface{} {
+func (ts *MDTokenizer) Token() Locatable {
 	if ts.token == nil {
 		ts.token = ts.t.getToken()
 	}
@@ -484,7 +543,7 @@ func (ts *MDTokenizer) Confirm() {
 // RawStorage storage for raw parser output
 type RawStorage struct {
 	level  int
-	items  []interface{}
+	items  []Locatable
 	errors []error
 }
 
@@ -495,13 +554,13 @@ func NewRawStorage(level int) *RawStorage {
 	}
 }
 
-func (rs *RawStorage) append(v interface{}) {
+func (rs *RawStorage) append(v Locatable) {
 	rs.items = append(rs.items, v)
 }
 
-// Header consumes header
+// header consumes header
 func (rs *RawStorage) Header(lin, col, xcol int, value string) {
-	rs.append(Header{
+	rs.append(header{
 		Location: Location{
 			Lin:  lin,
 			Col:  col,
@@ -525,7 +584,7 @@ func (rs *RawStorage) Header(lin, col, xcol int, value string) {
 func (rs *RawStorage) ValueNumber(lin, col, xcol int, value string) {
 	vuint, err := strconv.ParseUint(value, 10, 64)
 	if err == nil {
-		rs.append(Unsigned{
+		rs.append(unsigned{
 			Location: Location{
 				Lin:  lin,
 				Col:  col,
@@ -539,7 +598,7 @@ func (rs *RawStorage) ValueNumber(lin, col, xcol int, value string) {
 	}
 	vint, err := strconv.ParseInt(value, 10, 64)
 	if err == nil {
-		rs.append(Integer{
+		rs.append(integer{
 			Location: Location{
 				Lin:  lin,
 				Col:  col,
@@ -549,12 +608,13 @@ func (rs *RawStorage) ValueNumber(lin, col, xcol int, value string) {
 			Value: value,
 			Real:  vint,
 		})
+		return
 	}
 	vfloat, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		rs.errors = append(rs.errors, fmt.Errorf("%d:%d: cannot convert `%s` into numeric type", lin+1, col+1, err))
 	} else {
-		rs.append(Float{
+		rs.append(float{
 			Location: Location{
 				Lin:  lin,
 				Col:  col,
@@ -580,7 +640,7 @@ func (rs *RawStorage) ValueString(lin, col, xcol int, value string) {
 	})
 }
 
-// Boolean consumes value as boolean
+// boolean consumes value as boolean
 func (rs *RawStorage) Boolean(lin, col, xcol int, value string) {
 	var val bool
 	switch value {
@@ -591,7 +651,7 @@ func (rs *RawStorage) Boolean(lin, col, xcol int, value string) {
 	default:
 		rs.errors = append(rs.errors, fmt.Errorf("%d:%d: not a boolean value", value))
 	}
-	rs.append(Boolean{
+	rs.append(boolean{
 		Location: Location{
 			Lin:  lin,
 			Col:  col,
@@ -604,7 +664,7 @@ func (rs *RawStorage) Boolean(lin, col, xcol int, value string) {
 }
 
 // Data returns collected data
-func (rs *RawStorage) Data() []interface{} {
+func (rs *RawStorage) Data() []Locatable {
 	return rs.items
 }
 
@@ -618,7 +678,7 @@ type levelInfo struct {
 	nominal int
 }
 
-// FullTokenizer expands fenced blocks for `raw` syntax into the sequence of Header:Value items and 'normalizes' levels.
+// FullTokenizer expands fenced blocks for `raw` syntax into the sequence of header:Value items and 'normalizes' levels.
 // Example of normalization, the following tree structure
 //
 // 1.
@@ -639,7 +699,7 @@ type FullTokenizer struct {
 	confirmed bool
 	t7r       Tokenizer
 	rawData   struct {
-		items []interface{}
+		items []Locatable
 		index int
 	}
 	errors []error
@@ -657,7 +717,9 @@ func (f *FullTokenizer) Next() bool {
 		f.rawData.items = nil
 		f.rawData.index = 0
 	}
-	return f.t7r.Next()
+	res := f.t7r.Next()
+	f.Token()
+	return res
 }
 
 func (f *FullTokenizer) curLevel() int {
@@ -665,13 +727,13 @@ func (f *FullTokenizer) curLevel() int {
 }
 
 // Token ...
-func (f *FullTokenizer) Token() interface{} {
+func (f *FullTokenizer) Token() Locatable {
 	if f.rawData.index < len(f.rawData.items) {
 		return f.rawData.items[f.rawData.index]
 	}
 	res := f.t7r.Token()
 	switch v := res.(type) {
-	case Header:
+	case header:
 		if len(f.levels) == 0 {
 			f.levels = append(f.levels, levelInfo{
 				real:    1,
@@ -692,7 +754,7 @@ func (f *FullTokenizer) Token() interface{} {
 		}
 		v.Level = f.curLevel()
 		return v
-	case Code:
+	case code:
 		if v.Syntax.Value != "raw" {
 			return res
 		}
