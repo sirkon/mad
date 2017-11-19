@@ -66,10 +66,8 @@ func TestDecoderScalar(t *testing.T) {
 	require.Equal(t, (*Comment)(nil), cmt)
 
 	// now read sql code
-	sqlCode := Code{
-		Syntax: "sql",
-	}
-	if err := d.Decode(&sqlCode, nil); err != nil {
+	sqlCode := Code{}
+	if err := d.Decode(&sqlCode, "sql"); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, Code{
@@ -78,13 +76,8 @@ func TestDecoderScalar(t *testing.T) {
 	}, sqlCode)
 
 	// now read go or gohtml code
-	goCode := &Code{
-		Syntax: "go, gohtml",
-	}
-	if err := d.Decode(&sqlCode, nil); err == nil {
-		t.Fatal("should be error")
-	}
-	if err := d.Decode(&goCode, nil); err != nil {
+	goCode := &Code{}
+	if err := d.Decode(goCode, "go, gohtml"); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, &Code{
@@ -95,20 +88,99 @@ func TestDecoderScalar(t *testing.T) {
 	// read comment
 	tmp := Comment("")
 	cmt = &tmp
-	if err := d.Decode(cmt, nil); err != nil {
+	if err := d.Decode(&cmt, nil); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, Comment("this is just a random text\n"), *cmt)
+	if err := d.Decode(&cmt, nil); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, (*Comment)(nil), cmt)
 
 	// read toml code
-	tomlCode := &Code{
-		Syntax: "toml yaml json xml",
-	}
-	if err := d.Decode(tomlCode, nil); err != nil {
+	tomlCode := &Code{}
+	if err := d.Decode(tomlCode, "toml yaml json xml"); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, &Code{
 		Syntax: "toml",
 		Code:   `a = "1kb"` + "\n",
 	}, tomlCode)
+}
+
+func TestCodeComment(t *testing.T) {
+	data, err := testdata.Asset("codecomment.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var dest CodeComment
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := d.Decode(&dest, "sql"); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, CodeComment{
+		Code: Code{
+			Syntax: "sql",
+			Code:   "SELECT * FROM table\n",
+		},
+		Comment: "This was just a request\n",
+	}, dest)
+}
+
+func TestCommentCode(t *testing.T) {
+	data, err := testdata.Asset("commentcode.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var dest CommentCode
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := d.Decode(&dest, "sql"); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, CommentCode{
+		Code: Code{
+			Syntax: "sql",
+			Code:   "SELECT * FROM table\n",
+		},
+		Comment: "This will be a request\n",
+	}, dest)
+}
+
+func TestCodeSlice(t *testing.T) {
+	data, err := testdata.Asset("codearray.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var dest []Code
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := d.Decode(&dest, "sql"); err != nil {
+		t.Fatal(err)
+	}
+
+	require.Equal(t, []Code{
+		{
+			Syntax: "sql",
+			Code:   "SELECT * FROM table\n",
+		},
+		{
+			Syntax: "sql",
+			Code:   "SELECT * FROM table2\n",
+		},
+		{
+			Syntax: "sql",
+			Code:   "SELECT * FROM table3\n",
+		},
+	}, dest)
 }

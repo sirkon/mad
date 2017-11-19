@@ -81,6 +81,17 @@ func (d *Decoder) noTokenErrf(format string, a ...interface{}) error {
 	return d.noTokenErr(fmt.Errorf(format, a...))
 }
 
+func (d *Decoder) passComment() {
+	for d.tokens.Next() {
+		token := d.token()
+		if _, ok := token.(comment); ok {
+			d.tokens.Confirm()
+		} else {
+			break
+		}
+	}
+}
+
 // extracts comment from the underlying tokenizer
 func (d *Decoder) extractComment(dest *Comment) error {
 	if !d.tokens.Next() {
@@ -92,24 +103,6 @@ func (d *Decoder) extractComment(dest *Comment) error {
 		return locerrf(token, "comment expected, got %s instead", token)
 	}
 	*dest = Comment(cmt.Value)
-	d.tokens.Confirm()
-	return nil
-}
-
-// extracts comment from the underlying tokenizer if it is there
-func (d *Decoder) extractOptionalComment(dest **Comment) error {
-	if !d.tokens.Next() {
-		*dest = nil
-		return nil
-	}
-	token := d.token()
-	cmt, ok := token.(comment)
-	if !ok {
-		*dest = nil
-		return nil
-	}
-	res := Comment(cmt.Value)
-	*dest = &res
 	d.tokens.Confirm()
 	return nil
 }
@@ -136,9 +129,11 @@ func isBound(r rune) bool {
 }
 
 // extracts code from the underlying tokenizer if it matches against the syntax filter
-func (d *Decoder) extractCode(dest *Code) error {
+func (d *Decoder) extractCode(dest *Code, ctx interface{}) error {
+	d.passComment()
+	syntax := ctx.(string)
 	// if it is fixed syntax (not a list) then it is better be called as json syntax, sql syntax, etc
-	syntaxName, expanded := codeName(dest.Syntax)
+	syntaxName, expanded := codeName(syntax)
 	if !d.tokens.Next() {
 		return d.noTokenErrf("%s required", syntaxName)
 	}
@@ -153,7 +148,7 @@ func (d *Decoder) extractCode(dest *Code) error {
 	}
 
 	// no syntax means any syntax is OK
-	if len(dest.Syntax) == 0 {
+	if len(syntax) == 0 {
 		dest.Syntax = cc.Syntax.Value
 		dest.Code = cc.Content.Value
 		d.tokens.Confirm()
@@ -164,66 +159,19 @@ func (d *Decoder) extractCode(dest *Code) error {
 	}
 
 	// check if the input syntax is one of the allowed ones
-	pos := strings.Index(dest.Syntax, cc.Syntax.Value)
+	pos := strings.Index(syntax, cc.Syntax.Value)
 	end := pos + len(cc.Syntax.Value)
 	check := pos >= 0 &&
 		// check left bound
-		(pos == 0 || isBound(rune(dest.Syntax[pos]))) &&
+		(pos == 0 || isBound(rune(syntax[pos]))) &&
 		// check right bound
-		(end == len(dest.Syntax) || isBound(rune(dest.Syntax[end])))
+		(end == len(syntax) || isBound(rune(syntax[end])))
 	if !check {
-		return locerrf(cc, "unsupported syntax %s, only these are allowed: %s", dest.Syntax)
+		return locerrf(cc, "unsupported syntax %s, only these are allowed: %s", cc.Syntax.Value, syntax)
 	}
 
 	dest.Syntax = cc.Syntax.Value
 	dest.Code = cc.Content.Value
-	d.tokens.Confirm()
-	return nil
-}
-
-// optionally extracts code from the underlying tokenizer if it matches against the syntax filter
-func (d *Decoder) extractOptionalCode(dest **Code) error {
-	// if it is fixed syntax (not a list) then it is better be called as json syntax, sql syntax, etc
-	syntaxName, expanded := codeName((*dest).Syntax)
-	if !d.tokens.Next() {
-		*dest = nil
-		return nil
-	}
-
-	token := d.token()
-	cc, ok := token.(code)
-	if !ok || (expanded && syntaxName != cc.String()) {
-		*dest = nil
-		return nil
-	}
-
-	// no syntax means any syntax is OK
-	if len((*dest).Syntax) == 0 {
-		(*dest).Syntax = cc.Syntax.Value
-		(*dest).Code = cc.Content.Value
-		d.tokens.Confirm()
-		return nil
-	}
-	if len(cc.Syntax.Value) == 0 {
-		*dest = nil
-		return nil
-	}
-
-	// check if the input syntax is one of the allowed ones
-	pos := strings.Index((*dest).Syntax, cc.Syntax.Value)
-	end := pos + len(cc.Syntax.Value)
-	check := pos >= 0 &&
-		// check left bound
-		(pos == 0 || isBound(rune((*dest).Syntax[pos]))) &&
-		// check right bound
-		(end == len((*dest).Syntax) || isBound(rune((*dest).Syntax[end])))
-	if !check {
-		*dest = nil
-		return nil
-	}
-
-	(*dest).Syntax = cc.Syntax.Value
-	(*dest).Code = cc.Content.Value
 	d.tokens.Confirm()
 	return nil
 }
@@ -379,14 +327,6 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 
 	// process atomic types
 	switch v := dest.(type) {
-	case *Comment:
-		return d.extractComment(v)
-	case **Comment:
-		return d.extractOptionalComment(v)
-	case *Code:
-		return d.extractCode(v)
-	case **Code:
-		return d.extractOptionalCode(v)
 	case *string:
 		return d.extractString(v)
 	case *int, *int8, *int16, *int32, *int64:
@@ -397,6 +337,39 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 		return d.extractFloat(dest)
 	case []byte:
 		panic("[]byte support doesn't make a sense – the idea is all about being as human readable as possible")
+	case Decodable:
+		return v.Decode(d, context)
 	}
+
+	// may be a pointer to decodable?
+	tmp := reflect.ValueOf(dest)
+	decodable := reflect.TypeOf((*Decodable)(nil)).Elem()
+	if tmp.Elem().Type().Implements(decodable) {
+		v := tmp.Elem().Interface().(Decodable)
+		if err := v.Decode(d, context); err != nil {
+			// setting up
+			tmp.Elem().Set(reflect.Zero(tmp.Elem().Type()))
+		}
+		return nil
+	}
+
+	// may be an array of decodable
+	tmp = reflect.ValueOf(dest).Elem()
+	if tmp.Kind() == reflect.Slice {
+		for {
+			value := reflect.New(tmp.Type().Elem())
+			pntr := value.Interface()
+			dd, ok := pntr.(Decodable)
+			if !ok {
+				panic(fmt.Errorf("pointers to slice elements must implement decodable, they are not (got %T)", dest))
+			}
+			if err := dd.Decode(d, context); err != nil {
+				reflect.ValueOf(dest).Elem().Set(tmp)
+				break
+			}
+			tmp = reflect.Append(tmp, value.Elem())
+		}
+	}
+
 	return nil
 }
