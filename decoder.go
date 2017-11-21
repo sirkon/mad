@@ -316,12 +316,7 @@ func (d *Decoder) extractFloat(dest interface{}) error {
 func (d *Decoder) extractSlice(tmp reflect.Value, dest interface{}, context interface{}) error {
 	for {
 		value := reflect.New(tmp.Type().Elem())
-		pntr := value.Interface()
-		dd, ok := pntr.(Decodable)
-		if !ok {
-			panic(fmt.Errorf("pointers to slice elements must implement decodable, they are not (got %T)", dest))
-		}
-		if err := dd.Decode(d, context); err != nil {
+		if err := d.Decode(value.Interface(), context); err != nil {
 			reflect.ValueOf(dest).Elem().Set(tmp)
 			break
 		}
@@ -407,7 +402,7 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 		return nil
 	}
 
-	// may be an slice of decodable
+	// may be an slice of something that should be decodable
 	tmp = reflect.ValueOf(dest).Elem()
 	if tmp.Kind() == reflect.Slice {
 		return d.extractSlice(tmp, dest, context)
