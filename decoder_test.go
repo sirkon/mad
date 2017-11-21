@@ -184,3 +184,28 @@ func TestCodeSlice(t *testing.T) {
 		},
 	}, dest)
 }
+
+func TestMap(t *testing.T) {
+	data, err := testdata.Asset("maps.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var dest map[string]Code
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Decode(&dest, "yaml"); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, map[string]Code{
+		"key1": {
+			Syntax: "yaml",
+			Code:   "a: 1\n",
+		},
+		"key2": {
+			Syntax: "yaml",
+			Code:   "a: 2\n",
+		},
+	}, dest)
+}

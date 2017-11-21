@@ -11,14 +11,9 @@ import (
 	"unicode"
 )
 
-type level struct {
-	level int // represents hierarchy level
-	value int // represents header level set by user
-}
-
 // Decoder decodes sequence of tokens into destination object
 type Decoder struct {
-	levels  []level
+	levels  []int
 	tokens  Tokenizer
 	lastLin int
 	lastCol int
@@ -317,6 +312,64 @@ func (d *Decoder) extractFloat(dest interface{}) error {
 	return nil
 }
 
+// fill input slice
+func (d *Decoder) extractSlice(tmp reflect.Value, dest interface{}, context interface{}) error {
+	for {
+		value := reflect.New(tmp.Type().Elem())
+		pntr := value.Interface()
+		dd, ok := pntr.(Decodable)
+		if !ok {
+			panic(fmt.Errorf("pointers to slice elements must implement decodable, they are not (got %T)", dest))
+		}
+		if err := dd.Decode(d, context); err != nil {
+			reflect.ValueOf(dest).Elem().Set(tmp)
+			break
+		}
+		tmp = reflect.Append(tmp, value.Elem())
+	}
+	return nil
+}
+
+func (d *Decoder) level() int {
+	return len(d.levels)
+}
+
+func (d *Decoder) extractMap(dest interface{}, context interface{}) error {
+	for d.tokens.Next() {
+		token := d.token()
+		h, ok := token.(header)
+		if !ok {
+			return nil
+		}
+		vv := reflect.ValueOf(dest).Elem().MapIndex(reflect.ValueOf(h.Content.Value))
+		if vv.IsValid() {
+			return locerrf(h, "duplicate key `%s`", h.Content.Value)
+		}
+		switch {
+		case h.Level <= d.level():
+			return nil
+
+		case h.Level == d.level()+1:
+			d.levels = append(d.levels, h.Level)
+			d.tokens.Confirm()
+
+			// create map value and decode it then fill it
+			vdest := reflect.New(reflect.ValueOf(dest).Elem().Type().Elem()).Interface()
+			d.levels = d.levels[:len(d.levels)-1]
+			err := d.Decode(vdest, context)
+			if err != nil {
+				return err
+			}
+			reflect.ValueOf(dest).Elem().SetMapIndex(reflect.ValueOf(h.Content.Value), reflect.ValueOf(vdest).Elem())
+
+		default:
+			return locerrf(h, "unexpected header level %d, may be cut some #s?", h.Level)
+		}
+
+	}
+	return nil
+}
+
 // Decode decodes data from underlying tokenizer into the dest
 // the dest must not be nil
 func (d *Decoder) Decode(dest interface{}, context interface{}) error {
@@ -349,26 +402,28 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 		if err := v.Decode(d, context); err != nil {
 			// setting up
 			tmp.Elem().Set(reflect.Zero(tmp.Elem().Type()))
+			return nil
 		}
 		return nil
 	}
 
-	// may be an array of decodable
+	// may be an slice of decodable
 	tmp = reflect.ValueOf(dest).Elem()
 	if tmp.Kind() == reflect.Slice {
-		for {
-			value := reflect.New(tmp.Type().Elem())
-			pntr := value.Interface()
-			dd, ok := pntr.(Decodable)
-			if !ok {
-				panic(fmt.Errorf("pointers to slice elements must implement decodable, they are not (got %T)", dest))
-			}
-			if err := dd.Decode(d, context); err != nil {
-				reflect.ValueOf(dest).Elem().Set(tmp)
-				break
-			}
-			tmp = reflect.Append(tmp, value.Elem())
+		return d.extractSlice(tmp, dest, context)
+	}
+
+	// may be map of string → something
+	tmp = reflect.ValueOf(dest).Elem()
+	if tmp.Kind() == reflect.Map {
+		if tmp.Type().Key().Kind() != reflect.String {
+			panic(fmt.Errorf("only map[string]T are allowed, got %T", tmp.Interface()))
 		}
+		if tmp.IsNil() {
+			ddest := reflect.MakeMap(tmp.Type())
+			reflect.ValueOf(dest).Elem().Set(ddest)
+		}
+		return d.extractMap(dest, context)
 	}
 
 	return nil
