@@ -23,7 +23,7 @@ func TestDecoderScalar(t *testing.T) {
 	require.True(t, d.tokens.Next())
 	d.tokens.Confirm()
 	var destUint uint
-	if err := d.Decode(&destUint, nil); err != nil {
+	if err := d.Decode(&destUint, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, uint(1), destUint)
@@ -32,7 +32,7 @@ func TestDecoderScalar(t *testing.T) {
 	require.True(t, d.tokens.Next())
 	d.tokens.Confirm()
 	var destInt int16
-	if err := d.Decode(&destInt, nil); err != nil {
+	if err := d.Decode(&destInt, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, int16(-1), destInt)
@@ -41,7 +41,7 @@ func TestDecoderScalar(t *testing.T) {
 	require.True(t, d.tokens.Next())
 	d.tokens.Confirm()
 	var destFloat float32
-	if err := d.Decode(&destFloat, nil); err != nil {
+	if err := d.Decode(&destFloat, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, float32(1.12), destFloat)
@@ -50,24 +50,27 @@ func TestDecoderScalar(t *testing.T) {
 	require.True(t, d.tokens.Next())
 	d.tokens.Confirm()
 	var destString string
-	if err := d.Decode(&destString, nil); err != nil {
+	if err := d.Decode(&destString, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, "12", destString)
 
 	// now read comment if possible
 	var cmt *Comment
-	if err := d.Decode(cmt, nil); err == nil {
+	if err := d.Decode(cmt, NewContext()); err == nil {
 		t.Fatal("should be error")
 	}
-	if err := d.Decode(&cmt, nil); err != nil {
+	if err := d.Decode(&cmt, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, (*Comment)(nil), cmt)
 
+	ctx := NewContext()
+	ctx = ctx.New()
 	// now read sql code
 	sqlCode := Code{}
-	if err := d.Decode(&sqlCode, "sql"); err != nil {
+	ctx.Set("syntax", "sql")
+	if err := d.Decode(&sqlCode, ctx); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, Code{
@@ -77,7 +80,8 @@ func TestDecoderScalar(t *testing.T) {
 
 	// now read go or gohtml code
 	goCode := &Code{}
-	if err := d.Decode(goCode, "go, gohtml"); err != nil {
+	ctx.Set("syntax", "go, gohtml")
+	if err := d.Decode(goCode, ctx); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, &Code{
@@ -88,18 +92,19 @@ func TestDecoderScalar(t *testing.T) {
 	// read comment
 	tmp := Comment("")
 	cmt = &tmp
-	if err := d.Decode(&cmt, nil); err != nil {
+	if err := d.Decode(&cmt, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, Comment("this is just a random text\n"), *cmt)
-	if err := d.Decode(&cmt, nil); err != nil {
+	if err := d.Decode(&cmt, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, (*Comment)(nil), cmt)
 
 	// read toml code
 	tomlCode := &Code{}
-	if err := d.Decode(tomlCode, "toml yaml json xml"); err != nil {
+	ctx.Set("syntax", "toml yaml json xml")
+	if err := d.Decode(tomlCode, ctx); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, &Code{
@@ -119,7 +124,9 @@ func TestCodeComment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := d.Decode(&dest, "sql"); err != nil {
+	ctx := NewContext().New()
+	ctx.Set("syntax", "sql")
+	if err := d.Decode(&dest, ctx); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, CodeComment{
@@ -142,7 +149,9 @@ func TestCommentCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := d.Decode(&dest, "sql"); err != nil {
+	ctx := NewContext().New()
+	ctx.Set("syntax", "sql")
+	if err := d.Decode(&dest, ctx); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, CommentCode{
@@ -165,7 +174,9 @@ func TestCodeSlice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := d.Decode(&dest, "sql"); err != nil {
+	ctx := NewContext().New()
+	ctx.Set("syntax", "sql")
+	if err := d.Decode(&dest, ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -195,7 +206,9 @@ func TestMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := d.Decode(&dest, "yaml"); err != nil {
+	ctx := NewContext().New()
+	ctx.Set("sytnax", "yaml")
+	if err := d.Decode(&dest, ctx); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, map[string]Code{

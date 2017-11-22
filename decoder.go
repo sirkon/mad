@@ -124,9 +124,9 @@ func isBound(r rune) bool {
 }
 
 // extracts code from the underlying tokenizer if it matches against the syntax filter
-func (d *Decoder) extractCode(dest *Code, ctx interface{}) error {
+func (d *Decoder) extractCode(dest *Code, ctx Context) error {
 	d.passComment()
-	syntax := ctx.(string)
+	syntax := ctx.GetString("syntax", "")
 	// if it is fixed syntax (not a list) then it is better be called as json syntax, sql syntax, etc
 	syntaxName, expanded := codeName(syntax)
 	if !d.tokens.Next() {
@@ -313,10 +313,10 @@ func (d *Decoder) extractFloat(dest interface{}) error {
 }
 
 // fill input slice
-func (d *Decoder) extractSlice(tmp reflect.Value, dest interface{}, context interface{}) error {
+func (d *Decoder) extractSlice(tmp reflect.Value, dest interface{}, ctx Context) error {
 	for {
 		value := reflect.New(tmp.Type().Elem())
-		if err := d.Decode(value.Interface(), context); err != nil {
+		if err := d.Decode(value.Interface(), ctx); err != nil {
 			reflect.ValueOf(dest).Elem().Set(tmp)
 			break
 		}
@@ -329,7 +329,7 @@ func (d *Decoder) level() int {
 	return len(d.levels)
 }
 
-func (d *Decoder) extractMap(dest interface{}, context interface{}) error {
+func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 	for d.tokens.Next() {
 		token := d.token()
 		h, ok := token.(header)
@@ -351,7 +351,7 @@ func (d *Decoder) extractMap(dest interface{}, context interface{}) error {
 			// create map value and decode it then fill it
 			vdest := reflect.New(reflect.ValueOf(dest).Elem().Type().Elem()).Interface()
 			d.levels = d.levels[:len(d.levels)-1]
-			err := d.Decode(vdest, context)
+			err := d.Decode(vdest, ctx)
 			if err != nil {
 				return err
 			}
@@ -367,7 +367,7 @@ func (d *Decoder) extractMap(dest interface{}, context interface{}) error {
 
 // Decode decodes data from underlying tokenizer into the dest
 // the dest must not be nil
-func (d *Decoder) Decode(dest interface{}, context interface{}) error {
+func (d *Decoder) Decode(dest interface{}, ctx Context) error {
 	// input must be pointer type
 	if reflect.ValueOf(dest).Kind() != reflect.Ptr {
 		panic(fmt.Errorf("pointer type expected, got %T instead", dest))
@@ -386,7 +386,7 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 	case []byte:
 		panic("[]byte support doesn't make a sense – the idea is all about being as human readable as possible")
 	case Decodable:
-		return v.Decode(d, context)
+		return v.Decode(d, ctx)
 	}
 
 	// may be a pointer to decodable?
@@ -394,7 +394,7 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 	decodable := reflect.TypeOf((*Decodable)(nil)).Elem()
 	if tmp.Elem().Type().Implements(decodable) {
 		v := tmp.Elem().Interface().(Decodable)
-		if err := v.Decode(d, context); err != nil {
+		if err := v.Decode(d, ctx); err != nil {
 			// setting up
 			tmp.Elem().Set(reflect.Zero(tmp.Elem().Type()))
 			return nil
@@ -405,7 +405,7 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 	// may be an slice of something that should be decodable
 	tmp = reflect.ValueOf(dest).Elem()
 	if tmp.Kind() == reflect.Slice {
-		return d.extractSlice(tmp, dest, context)
+		return d.extractSlice(tmp, dest, ctx)
 	}
 
 	// may be map of string → something
@@ -418,7 +418,7 @@ func (d *Decoder) Decode(dest interface{}, context interface{}) error {
 			ddest := reflect.MakeMap(tmp.Type())
 			reflect.ValueOf(dest).Elem().Set(ddest)
 		}
-		return d.extractMap(dest, context)
+		return d.extractMap(dest, ctx)
 	}
 
 	return nil
