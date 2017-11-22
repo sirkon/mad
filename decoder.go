@@ -172,6 +172,7 @@ func (d *Decoder) extractCode(dest *Code, ctx Context) error {
 		return locerrf(cc, "unsupported syntax %s, only these are allowed: %s", cc.Syntax.Value, syntax)
 	}
 
+	dest.loc = cc.Content.Location
 	dest.Syntax = cc.Syntax.Value
 	dest.Code = cc.Content.Value
 	d.tokens.Confirm()
@@ -402,6 +403,10 @@ func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 	return nil
 }
 
+func (d *Decoder) extractStruct(dest interface{}, ctx Context) error {
+	return nil
+}
+
 // Decode decodes data from underlying tokenizer into the dest
 // the dest must not be nil
 func (d *Decoder) Decode(dest interface{}, ctx Context) error {
@@ -443,13 +448,12 @@ func (d *Decoder) Decode(dest interface{}, ctx Context) error {
 
 	// may be an slice of something that should be decodable
 	tmp = reflect.ValueOf(dest).Elem()
-	if tmp.Kind() == reflect.Slice {
+	switch tmp.Kind() {
+	case reflect.Slice:
 		return d.extractSlice(tmp, dest, ctx)
-	}
 
-	// may be map of string → something
-	tmp = reflect.ValueOf(dest).Elem()
-	if tmp.Kind() == reflect.Map {
+		// may be map of string → something
+	case reflect.Map:
 		if tmp.Type().Key().Kind() != reflect.String {
 			panic(fmt.Errorf("only map[string]T are allowed, got %T", tmp.Interface()))
 		}
@@ -458,7 +462,12 @@ func (d *Decoder) Decode(dest interface{}, ctx Context) error {
 			reflect.ValueOf(dest).Elem().Set(ddest)
 		}
 		return d.extractMap(dest, ctx)
-	}
 
+	case reflect.Struct:
+		return d.extractStruct(dest, ctx)
+
+	default:
+		panic(fmt.Errorf("type %T cannot be a target for decoding", dest))
+	}
 	return nil
 }

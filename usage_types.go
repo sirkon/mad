@@ -16,8 +16,19 @@ func (c *Comment) Decode(d *Decoder, ctx Context) error {
 
 // Code is for code decoding.
 type Code struct {
+	loc    Locatable
 	Syntax string
 	Code   string
+}
+
+// Start implementation for locatable
+func (c *Code) Start() (lin int, col int) {
+	return c.loc.Start()
+}
+
+// Finish implementation for locatable
+func (c *Code) Finish() (lin int, col int) {
+	return c.loc.Finish()
 }
 
 // Decode ...

@@ -11,7 +11,7 @@ import (
 	"github.com/sirkon/mad/rawparser"
 )
 
-// Locatable for tokens that can locate itself
+// loc for tokens that can locate itself
 type Locatable interface {
 	Start() (lin int, col int)
 	Finish() (lin int, col int)
@@ -27,12 +27,12 @@ type Location struct {
 	XCol int
 }
 
-// Start to implement Locatable
+// Start to implement loc
 func (l Location) Start() (lin int, col int) {
 	return l.Lin, l.Col
 }
 
-// Finish to implement Locatable
+// Finish to implement loc
 func (l Location) Finish() (lin int, col int) {
 	return l.XLin, l.XCol
 }
@@ -649,7 +649,7 @@ func (rs *RawStorage) Boolean(lin, col, xcol int, value string) {
 	case "false":
 		val = false
 	default:
-		rs.errors = append(rs.errors, fmt.Errorf("%d:%d: not a boolean value", value))
+		rs.errors = append(rs.errors, fmt.Errorf("%d:%d: not a boolean value", lin, col))
 	}
 	rs.append(boolean{
 		Location: Location{

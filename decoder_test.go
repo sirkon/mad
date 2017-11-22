@@ -74,6 +74,7 @@ func TestDecoderScalar(t *testing.T) {
 		t.Fatal(err)
 	}
 	require.Equal(t, Code{
+		loc:    Location{Lin: 8, Col: 0, XLin: 8, XCol: 19},
 		Syntax: "sql",
 		Code:   "SELECT * FROM table\n",
 	}, sqlCode)
@@ -85,6 +86,7 @@ func TestDecoderScalar(t *testing.T) {
 		t.Fatal(err)
 	}
 	require.Equal(t, &Code{
+		loc:    Location{Lin: 11, Col: 0, XLin: 14, XCol: 1},
 		Syntax: "go",
 		Code:   "package main\nfunc main() {\n    panic(\"LOL\")\n}\n",
 	}, goCode)
@@ -108,6 +110,7 @@ func TestDecoderScalar(t *testing.T) {
 		t.Fatal(err)
 	}
 	require.Equal(t, &Code{
+		loc:    Location{Lin: 18, Col: 0, XLin: 18, XCol: 9},
 		Syntax: "toml",
 		Code:   `a = "1kb"` + "\n",
 	}, tomlCode)
@@ -131,6 +134,7 @@ func TestCodeComment(t *testing.T) {
 	}
 	require.Equal(t, CodeComment{
 		Code: Code{
+			loc:    Location{Lin: 1, Col: 0, XLin: 1, XCol: 19},
 			Syntax: "sql",
 			Code:   "SELECT * FROM table\n",
 		},
@@ -156,6 +160,7 @@ func TestCommentCode(t *testing.T) {
 	}
 	require.Equal(t, CommentCode{
 		Code: Code{
+			loc:    Location{Lin: 2, Col: 0, XLin: 2, XCol: 19},
 			Syntax: "sql",
 			Code:   "SELECT * FROM table\n",
 		},
@@ -182,14 +187,17 @@ func TestCodeSlice(t *testing.T) {
 
 	require.Equal(t, []Code{
 		{
+			loc:    Location{Lin: 1, XLin: 1, XCol: 19},
 			Syntax: "sql",
 			Code:   "SELECT * FROM table\n",
 		},
 		{
+			loc:    Location{Lin: 5, XLin: 5, XCol: 20},
 			Syntax: "sql",
 			Code:   "SELECT * FROM table2\n",
 		},
 		{
+			loc:    Location{Lin: 9, XLin: 9, XCol: 20},
 			Syntax: "sql",
 			Code:   "SELECT * FROM table3\n",
 		},
