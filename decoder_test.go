@@ -248,8 +248,8 @@ func TestUnmarshaler(t *testing.T) {
 	ctx := NewContext().New()
 	for d.tokens.Next() {
 		token := d.tokens.Token()
-		require.IsType(t, Header{}, token)
-		key := token.(Header).Content.Value
+		require.IsType(t, header{}, token)
+		key := token.(header).Content.Value
 		d.tokens.Confirm()
 
 		dest := identity("")

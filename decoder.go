@@ -369,7 +369,7 @@ func (d *Decoder) level() int {
 func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 	for d.tokens.Next() {
 		token := d.token()
-		h, ok := token.(Header)
+		h, ok := token.(header)
 		if !ok {
 			return nil
 		}
@@ -395,7 +395,7 @@ func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 			reflect.ValueOf(dest).Elem().SetMapIndex(reflect.ValueOf(h.Content.Value), reflect.ValueOf(vdest).Elem())
 
 		default:
-			return locerrf(h, "unexpected Header level %d, may be cut some #s?", h.Level)
+			return locerrf(h, "unexpected header level %d, may be cut some #s?", h.Level)
 		}
 
 	}
