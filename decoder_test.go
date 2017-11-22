@@ -222,3 +222,47 @@ func TestMap(t *testing.T) {
 		},
 	}, dest)
 }
+
+type identity string
+
+func (i *identity) Unmarshal(data string) (err error) {
+	*i = identity(data)
+	return nil
+}
+
+func TestUnmarshaler(t *testing.T) {
+	data, err := testdata.Asset("rawunmarshaler.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := map[string]string{}
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	d, err = NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := NewContext().New()
+	for d.tokens.Next() {
+		token := d.tokens.Token()
+		require.IsType(t, Header{}, token)
+		key := token.(Header).Content.Value
+		d.tokens.Confirm()
+
+		dest := identity("")
+		if err := d.Decode(&dest, ctx); err != nil {
+			t.Fatal(err)
+		}
+		res[key] = string(dest)
+	}
+	require.Equal(t, map[string]string{
+		"a": "1",
+		"b": "ID",
+		"c": `1`,
+		"d": "true",
+		"e": "128kb",
+	}, res)
+}

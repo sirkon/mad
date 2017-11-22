@@ -11,6 +11,13 @@ import (
 	"unicode"
 )
 
+// Unmarshaler is implemented by types that can unmarshal
+// text, identifier, unsinged, integer, numeric, inline_string
+// or boolean.
+type Unmarshaler interface {
+	Unmarshal(data string) (err error)
+}
+
 // Decoder decodes sequence of tokens into destination object
 type Decoder struct {
 	levels  []int
@@ -312,6 +319,36 @@ func (d *Decoder) extractFloat(dest interface{}) error {
 	return nil
 }
 
+// extracts data from the underlying tokenizer using type own capabilities
+func (d *Decoder) extractUnmarshaler(dest Unmarshaler) error {
+	if !d.tokens.Next() {
+		return d.noTokenErrf("token required")
+	}
+
+	token := d.token()
+	var value string
+	switch v := token.(type) {
+	case integer:
+		value = v.Value
+	case unsigned:
+		value = v.Value
+	case float:
+		value = v.Value
+	case String:
+		value = v.Value
+	case boolean:
+		value = v.Value
+	default:
+		return locerrf(token, "only items of raw fenced code blocks can be unmarshalled, got %s", token)
+	}
+	if err := dest.Unmarshal(value); err != nil {
+		return locerr(token, err)
+	}
+
+	d.tokens.Confirm()
+	return nil
+}
+
 // fill input slice
 func (d *Decoder) extractSlice(tmp reflect.Value, dest interface{}, ctx Context) error {
 	for {
@@ -332,7 +369,7 @@ func (d *Decoder) level() int {
 func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 	for d.tokens.Next() {
 		token := d.token()
-		h, ok := token.(header)
+		h, ok := token.(Header)
 		if !ok {
 			return nil
 		}
@@ -358,7 +395,7 @@ func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 			reflect.ValueOf(dest).Elem().SetMapIndex(reflect.ValueOf(h.Content.Value), reflect.ValueOf(vdest).Elem())
 
 		default:
-			return locerrf(h, "unexpected header level %d, may be cut some #s?", h.Level)
+			return locerrf(h, "unexpected Header level %d, may be cut some #s?", h.Level)
 		}
 
 	}
@@ -383,6 +420,8 @@ func (d *Decoder) Decode(dest interface{}, ctx Context) error {
 		return d.extractUint(dest)
 	case *float32, *float64:
 		return d.extractFloat(dest)
+	case Unmarshaler:
+		return d.extractUnmarshaler(v)
 	case []byte:
 		panic("[]byte support doesn't make a sense – the idea is all about being as human readable as possible")
 	case Decodable:

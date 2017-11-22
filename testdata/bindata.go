@@ -8,6 +8,7 @@
 // level_normalization.md
 // maps.md
 // rawsection
+// rawunmarshaler.md
 // regression.md
 // scalar_decoder.md
 // test.md
@@ -93,7 +94,7 @@ func bindataGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511287079, 0)}
+	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511375683, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -238,6 +239,26 @@ func rawsection() (*asset, error) {
 	return a, nil
 }
 
+var _rawunmarshalerMd = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4a\x48\x48\x28\x4a\x2c\xe7\x4a\xb4\x35\xe4\x4a\xb2\xf5\x74\xe1\x4a\xb6\x55\x32\x54\xe2\x4a\xb1\x2d\x29\x2a\x4d\xe5\x4a\xb5\x35\x34\xb2\xc8\x4e\xe2\x4a\x48\x48\x00\x04\x00\x00\xff\xff\xb0\x40\xbe\x8e\x28\x00\x00\x00")
+
+func rawunmarshalerMdBytes() ([]byte, error) {
+	return bindataRead(
+		_rawunmarshalerMd,
+		"rawunmarshaler.md",
+	)
+}
+
+func rawunmarshalerMd() (*asset, error) {
+	bytes, err := rawunmarshalerMdBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "rawunmarshaler.md", size: 40, mode: os.FileMode(436), modTime: time.Unix(1511375683, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _regressionMd = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4a\x48\x48\x28\x4a\x2c\xe7\xca\x4b\x54\xb0\x55\xd0\x35\xe4\xca\x4b\x52\xb0\x55\x30\x34\xd2\x33\xe0\x4a\x48\x48\x00\x04\x00\x00\xff\xff\x1f\x8b\x88\x74\x1c\x00\x00\x00")
 
 func regressionMdBytes() ([]byte, error) {
@@ -358,6 +379,7 @@ var _bindata = map[string]func() (*asset, error){
 	"level_normalization.md": level_normalizationMd,
 	"maps.md": mapsMd,
 	"rawsection": rawsection,
+	"rawunmarshaler.md": rawunmarshalerMd,
 	"regression.md": regressionMd,
 	"scalar_decoder.md": scalar_decoderMd,
 	"test.md": testMd,
@@ -411,6 +433,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"level_normalization.md": &bintree{level_normalizationMd, map[string]*bintree{}},
 	"maps.md": &bintree{mapsMd, map[string]*bintree{}},
 	"rawsection": &bintree{rawsection, map[string]*bintree{}},
+	"rawunmarshaler.md": &bintree{rawunmarshalerMd, map[string]*bintree{}},
 	"regression.md": &bintree{regressionMd, map[string]*bintree{}},
 	"scalar_decoder.md": &bintree{scalar_decoderMd, map[string]*bintree{}},
 	"test.md": &bintree{testMd, map[string]*bintree{}},

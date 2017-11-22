@@ -48,16 +48,16 @@ func (s String) String() string {
 	return "string"
 }
 
-// header represents header
-type header struct {
+// Header represents Header
+type Header struct {
 	Location
 	Content String
 	Level   int
 }
 
 // String for fmt.Stringer implementation
-func (header) String() string {
-	return "header"
+func (h Header) String() string {
+	return fmt.Sprintf("Header(`%s`)", h.Content.Value)
 }
 
 // code represents fenced code block
@@ -366,7 +366,7 @@ func (t *tokenizer) nextHeader() bool {
 		}
 	}
 	if nextPos > 6 {
-		t.err = t.locReport(t.lin, pos, "header level limit exceeded: %d, cannot be greater than 6", nextPos)
+		t.err = t.locReport(t.lin, pos, "Header level limit exceeded: %d, cannot be greater than 6", nextPos)
 		return false
 	}
 	if pos > 0 {
@@ -376,7 +376,7 @@ func (t *tokenizer) nextHeader() bool {
 	spaces, tail := passHeadSpaces(rest[nextPos:])
 	body := throwTrailingSpaces(tail)
 
-	t.token = header{
+	t.token = Header{
 		Location: Location{
 			Lin:  t.lin,
 			Col:  pos + t.col,
@@ -558,9 +558,9 @@ func (rs *RawStorage) append(v Locatable) {
 	rs.items = append(rs.items, v)
 }
 
-// header consumes header
+// Header consumes Header
 func (rs *RawStorage) Header(lin, col, xcol int, value string) {
-	rs.append(header{
+	rs.append(Header{
 		Location: Location{
 			Lin:  lin,
 			Col:  col,
@@ -678,7 +678,7 @@ type levelInfo struct {
 	nominal int
 }
 
-// FullTokenizer expands fenced blocks for `raw` syntax into the sequence of header:Value items and 'normalizes' levels.
+// FullTokenizer expands fenced blocks for `raw` syntax into the sequence of Header:Value items and 'normalizes' levels.
 // Example of normalization, the following tree structure
 //
 // 1.
@@ -733,7 +733,7 @@ func (f *FullTokenizer) Token() Locatable {
 	}
 	res := f.t7r.Token()
 	switch v := res.(type) {
-	case header:
+	case Header:
 		if len(f.levels) == 0 {
 			f.levels = append(f.levels, levelInfo{
 				real:    1,

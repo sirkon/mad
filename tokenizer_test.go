@@ -144,8 +144,8 @@ func Test_passHeadSpaces(t *testing.T) {
 }
 
 var (
-	tokenHeaderSimplest = func(lin int, offset int) header {
-		return header{
+	tokenHeaderSimplest = func(lin int, offset int) Header {
+		return Header{
 			Location: Location{
 				Lin:  lin,
 				XLin: lin,
@@ -159,14 +159,14 @@ var (
 					Col:  1 + offset,
 					XCol: 7 + offset,
 				},
-				Value: "header",
+				Value: "Header",
 			},
 			Level: 1,
 		}
 	}
 
-	tokenHeaderHarder = func(lin int) header {
-		return header{
+	tokenHeaderHarder = func(lin int) Header {
+		return Header{
 			Location: Location{
 				Lin:  lin,
 				XLin: lin,
@@ -185,8 +185,8 @@ var (
 		}
 	}
 
-	tokenHeaderHardest = func(lin int) header {
-		return header{
+	tokenHeaderHardest = func(lin int) Header {
+		return Header{
 			Location: Location{
 				Lin:  lin,
 				XLin: lin,
@@ -220,7 +220,7 @@ func TestTokeniserLine(t *testing.T) {
 		},
 		{
 			name:  "simplest case",
-			input: "#header",
+			input: "#Header",
 			scan:  true,
 			token: tokenHeaderSimplest(0, 0),
 		},
@@ -249,9 +249,9 @@ func TestTokeniserLine(t *testing.T) {
 }
 
 func TestTokenizerSeveralLines(t *testing.T) {
-	inputList := []string{"#header", "", " #header", "## хеадер", "#  хе д р    "}
+	inputList := []string{"#Header", "", " #Header", "## хеадер", "#  хе д р    "}
 	tz := newTokenizer([]byte(strings.Join(inputList, "\n")))
-	samples := []header{
+	samples := []Header{
 		tokenHeaderSimplest(0, 0),
 		tokenHeaderSimplest(2, 1),
 		tokenHeaderHarder(3),
@@ -313,7 +313,7 @@ func TestTokenizerRealWorld(t *testing.T) {
 		"bugaga",
 		"",
 		"lol",
-		"#header",
+		"#Header",
 		"lol again",
 		"again",
 		"```sql",
@@ -377,11 +377,11 @@ func TestTokenizerRealWorld(t *testing.T) {
 }
 
 func TestTabProcessing(t *testing.T) {
-	tz := newTokenizer([]byte("#\theader"))
+	tz := newTokenizer([]byte("#\tHeader"))
 	require.True(t, tz.next())
 	token := tz.getToken()
 	require.False(t, tz.next())
-	require.Equal(t, header{
+	require.Equal(t, Header{
 		Location: Location{
 			Col:  0,
 			XCol: 11,
@@ -392,14 +392,14 @@ func TestTabProcessing(t *testing.T) {
 				Col:  5,
 				XCol: 11,
 			},
-			Value: "header",
+			Value: "Header",
 		},
 	}, token)
 }
 
 func TestTokenStream(t *testing.T) {
 	input := []string{
-		"# header",
+		"# Header",
 		"comment",
 	}
 	ttt := NewTokenizer([]byte(strings.Join(input, "\n")))
@@ -409,7 +409,7 @@ func TestTokenStream(t *testing.T) {
 		token := ttt.Token()
 		tokens = append(tokens, token)
 		if i == 0 {
-			require.IsType(t, header{}, token)
+			require.IsType(t, Header{}, token)
 		} else {
 			require.Equal(t, tokens[0], token)
 		}
@@ -436,7 +436,7 @@ func TestFullTokenSteam(t *testing.T) {
 		t2.Confirm()
 	}
 	require.Equal(t, []interface{}{
-		header{
+		Header{
 			Location: Location{
 				Lin:  1,
 				Col:  0,
@@ -463,7 +463,7 @@ func TestFullTokenSteam(t *testing.T) {
 			},
 			Value: "1",
 		},
-		header{
+		Header{
 			Location: Location{
 				Lin:  4,
 				Col:  0,
@@ -481,7 +481,7 @@ func TestFullTokenSteam(t *testing.T) {
 				Value: "request",
 			},
 		},
-		header{
+		Header{
 			Location: Location{
 				Lin:  6,
 				Col:  0,
@@ -550,7 +550,7 @@ func TestFullTokenRegression2(t *testing.T) {
 		t.Error(err)
 	}
 	require.Equal(t, []interface{}{
-		header{
+		Header{
 			Location: Location{
 				Lin:  1,
 				Col:  0,
@@ -578,7 +578,7 @@ func TestFullTokenRegression2(t *testing.T) {
 			Value: "-1",
 			Real:  -1,
 		},
-		header{
+		Header{
 			Location: Location{
 				Lin:  2,
 				Col:  0,
@@ -623,7 +623,7 @@ func TestLevelNormalization(t *testing.T) {
 	}
 	require.Equal(t,
 		[]interface{}{
-			header{
+			Header{
 				Location: Location{
 					XCol: 6,
 				},
@@ -637,7 +637,7 @@ func TestLevelNormalization(t *testing.T) {
 				},
 			},
 
-			header{
+			Header{
 				Location: Location{
 					Lin:  1,
 					Col:  0,
@@ -656,7 +656,7 @@ func TestLevelNormalization(t *testing.T) {
 				},
 			},
 
-			header{
+			Header{
 				Location: Location{
 					Lin:  2,
 					Col:  0,
