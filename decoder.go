@@ -142,7 +142,16 @@ func (d *Decoder) extractCode(dest *Code, ctx Context) error {
 
 	token := d.token()
 	cc, ok := token.(code)
-	if !ok || (expanded && syntaxName != cc.String()) {
+	if !ok {
+		var format string
+		if len(syntaxName) > 0 {
+			format = syntaxName + " was expected, got %s"
+		} else {
+			format = "code block was expected, got %s"
+		}
+		return locerrf(cc, format, token)
+	}
+	if expanded && syntaxName != cc.String() {
 		if len(cc.Syntax.Value) == 0 {
 			return locerrf(cc, "%s expected, got code block with unspecified syntax")
 		}
@@ -374,36 +383,189 @@ func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 		if !ok {
 			return nil
 		}
+		if h.Level <= d.level() {
+			return nil
+		} else if h.Level > d.level()+1 {
+			return locerrf(h, "unexpected header level %d, may be cut some #s?", h.Level)
+		}
 		vv := reflect.ValueOf(dest).Elem().MapIndex(reflect.ValueOf(h.Content.Value))
 		if vv.IsValid() {
 			return locerrf(h, "duplicate key `%s`", h.Content.Value)
 		}
-		switch {
-		case h.Level <= d.level():
-			return nil
+		d.levels = append(d.levels, h.Level)
+		d.tokens.Confirm()
 
-		case h.Level == d.level()+1:
-			d.levels = append(d.levels, h.Level)
-			d.tokens.Confirm()
-
-			// create map value and decode it then fill it
-			vdest := reflect.New(reflect.ValueOf(dest).Elem().Type().Elem()).Interface()
-			d.levels = d.levels[:len(d.levels)-1]
-			err := d.Decode(vdest, ctx)
-			if err != nil {
-				return err
-			}
-			reflect.ValueOf(dest).Elem().SetMapIndex(reflect.ValueOf(h.Content.Value), reflect.ValueOf(vdest).Elem())
-
-		default:
-			return locerrf(h, "unexpected header level %d, may be cut some #s?", h.Level)
+		// create map value and decode it then fill it
+		vdest := reflect.New(reflect.ValueOf(dest).Elem().Type().Elem()).Interface()
+		d.levels = d.levels[:len(d.levels)-1]
+		err := d.Decode(vdest, ctx)
+		if err != nil {
+			return err
 		}
-
+		reflect.ValueOf(dest).Elem().SetMapIndex(reflect.ValueOf(h.Content.Value), reflect.ValueOf(vdest).Elem())
 	}
 	return nil
 }
 
-func (d *Decoder) extractStruct(dest interface{}, ctx Context) error {
+type fieldDescription struct {
+	regex    *regexp.Regexp
+	index    int
+	labels   map[string]string
+	required bool
+	checked  bool
+}
+
+func extractFieldInfo(tag string, errf func(format string, a ...interface{}) error) (f fieldDescription, err error) {
+	f.labels = map[string]string{}
+	first := true
+	s := newSplitter(tag)
+	for s.next() {
+		retext := s.text()
+		if first {
+			first = false
+			if !strings.HasPrefix(retext, "^") {
+				retext = "^" + retext
+			}
+			if !strings.HasSuffix(retext, "$") {
+				retext += "$"
+			}
+			f.regex, err = regexp.Compile(retext)
+			if err != nil {
+				return f, errf("incorrect regular expression `%s`", retext)
+			}
+			continue
+		}
+		key, value, ok := keyVal(retext)
+		if !ok {
+			return f, errf("incorrect tag fragment `%s`", retext)
+		}
+		if _, ok = f.labels[key]; ok {
+			return f, errf("duplicate lable name `%s`", key)
+		}
+		f.labels[key] = value
+	}
+	return
+}
+
+func extractFieldsMetainfo(dest interface{}) (fields []fieldDescription, err error) {
+	tmp := reflect.ValueOf(dest).Elem()
+	limit := tmp.NumField()
+	for i := 0; i < limit; i++ {
+		rawMad := tmp.Type().Field(i).Tag.Get("mad")
+		if len(rawMad) == 0 {
+			continue
+		}
+		f, err := extractFieldInfo(rawMad, func(format string, a ...interface{}) error {
+			return fmt.Errorf(fmt.Sprintf(format, a...) +
+				fmt.Sprintf(" for field %s of type %T", tmp.Type().Field(i).Name, tmp.Interface()))
+		})
+		if err != nil {
+			return fields, err
+		}
+		f.index = i
+		switch tmp.Type().Field(i).Type.Kind() {
+		case reflect.Map, reflect.Slice, reflect.Ptr:
+			f.required = false
+		default:
+			f.required = true
+		}
+		if v, ok := dest.(Sufficient); ok {
+			// This is sufficient type
+			f.required = v.Required()
+		}
+		fields = append(fields, f)
+	}
+	return
+}
+
+func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
+	fields, err := extractFieldsMetainfo(dest)
+	if err != nil {
+		return
+	}
+	tmp := reflect.TypeOf(dest).Elem()
+	realType := reflect.ValueOf(dest).Elem().Interface()
+	taken := map[string]Locatable{}
+	for d.tokens.Next() {
+		token := d.token()
+
+		h, ok := token.(header)
+		if !ok {
+			break
+		}
+		if h.Level <= d.level() {
+			return nil
+		} else if h.Level > d.level()+1 {
+			return locerrf(h, "unexpected header level %d, may be cut some #s?", h.Level)
+		}
+		hname := h.Content.Value
+		if prev, ok := taken[hname]; ok {
+			plin, pcol := prev.Start()
+			return locerrf(token, "key `%` has been taken already at (%d, %d)", hname, plin, pcol)
+		}
+
+		// checks on general header validity done
+		taken[hname] = token
+		d.levels = append(d.levels, h.Level)
+		d.tokens.Confirm()
+
+		// now look for the right field
+		indices := []int{}
+		for i, field := range fields {
+			if field.regex.MatchString(hname) {
+				indices = append(indices, i)
+			}
+		}
+		if len(indices) == 0 {
+			return locerrf(token, "no match for header `%s` in type %T", hname, realType)
+		}
+		if len(indices) > 1 {
+			fnames := []string{}
+			for _, i := range indices {
+				fnames = append(fnames, tmp.Field(fields[i].index).Name)
+			}
+			return locerrf(
+				token,
+				"ambigious mapping of header `%s`, several fields were matched in type %T: %s",
+				hname,
+				strings.Join(fnames, ", "),
+				realType,
+			)
+		}
+
+		// process the field
+		index := indices[0]
+		fieldMeta := fields[index]
+		// TODO check if Sufficient and let it process itself if it is.
+		fieldValue := reflect.ValueOf(dest).Elem().Field(index).Addr().Interface()
+		d.levels = d.levels[:len(d.levels)-1]
+		newCtx := ctx.New()
+		for k, v := range fieldMeta.labels {
+			ctx.Set(k, v)
+		}
+		if err = d.Decode(fieldValue, newCtx); err != nil {
+			return err
+		}
+		fieldMeta.checked = true
+		fields[index] = fieldMeta
+	}
+
+	// and now the last check, all required fields must be checked
+	missed := []string{}
+	for _, field := range fields {
+		if field.required && !field.checked {
+			missed = append(missed, tmp.Field(field.index).Name)
+		}
+	}
+	if len(missed) > 0 {
+		return fmt.Errorf(
+			"%d:%d: fields %s of type %T are required but were missed",
+			d.lastLin+1, d.lastCol+1,
+			strings.Join(missed, ", "),
+			realType,
+		)
+	}
+
 	return nil
 }
 
@@ -465,6 +627,20 @@ func (d *Decoder) Decode(dest interface{}, ctx Context) error {
 
 	case reflect.Struct:
 		return d.extractStruct(dest, ctx)
+
+	case reflect.Ptr:
+		if tmp.Elem().Kind() == reflect.Struct {
+			realDest := reflect.New(tmp.Elem().Elem().Type())
+			ggg := realDest.Addr().Interface()
+			err := d.extractStruct(ggg, ctx)
+			if err == nil {
+				reflect.ValueOf(dest).Set(realDest)
+			} else {
+				reflect.ValueOf(dest).Set(reflect.Zero(reflect.TypeOf(dest)))
+			}
+			return err
+		}
+		fallthrough
 
 	default:
 		panic(fmt.Errorf("type %T cannot be a target for decoding", dest))

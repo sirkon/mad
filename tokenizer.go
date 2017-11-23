@@ -712,10 +712,12 @@ func (f *FullTokenizer) Next() bool {
 	}
 	if f.rawData.index < len(f.rawData.items)-1 {
 		f.rawData.index++
+		f.confirmed = false
 		return true
 	} else {
 		f.rawData.items = nil
 		f.rawData.index = 0
+		f.confirmed = false
 	}
 	res := f.t7r.Next()
 	f.Token()
@@ -781,6 +783,7 @@ func (f *FullTokenizer) Confirm() {
 
 // NewFullTokenizer ...
 func NewFullTokenizer(t7r Tokenizer) *FullTokenizer {
+	t7r.Next()
 	return &FullTokenizer{
 		t7r:       t7r,
 		confirmed: true,

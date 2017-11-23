@@ -1,9 +1,8 @@
 package mad
 
 import (
-	"testing"
-
 	"bytes"
+	"testing"
 
 	"github.com/sirkon/mad/testdata"
 	"github.com/stretchr/testify/require"
@@ -215,16 +214,26 @@ func TestMap(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := NewContext().New()
-	ctx.Set("sytnax", "yaml")
+	ctx.Set("syntax", "yaml")
 	if err := d.Decode(&dest, ctx); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, map[string]Code{
 		"key1": {
+			loc: Location{
+				Lin:  2,
+				XLin: 2,
+				XCol: 4,
+			},
 			Syntax: "yaml",
 			Code:   "a: 1\n",
 		},
 		"key2": {
+			loc: Location{
+				Lin:  7,
+				XLin: 7,
+				XCol: 4,
+			},
 			Syntax: "yaml",
 			Code:   "a: 2\n",
 		},
@@ -273,4 +282,75 @@ func TestUnmarshaler(t *testing.T) {
 		"d": "true",
 		"e": "128kb",
 	}, res)
+}
+
+func TestRegression(t *testing.T) {
+	data, err := testdata.Asset("rawunmarshaler.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.passComment()
+	require.True(t, d.tokens.Next())
+	require.IsType(t, header{}, d.token())
+}
+
+func TestStructDecoding(t *testing.T) {
+	data, err := testdata.Asset("rawunmarshaler.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	type tmp struct {
+		A Code    `mad:"a,syntax=go"`
+		B Comment `mad:"b"`
+	}
+	var dest tmp
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := NewContext()
+	if err := d.Decode(&dest, ctx); err != nil {
+		require.Error(t, err)
+	}
+}
+
+func TestStructEasy(t *testing.T) {
+	type tmp struct {
+		A Code    `mad:"a,syntax=go"`
+		B Comment `mad:"b"`
+	}
+	var dest tmp
+	data, err := testdata.Asset("struct_easy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := NewContext()
+	if err := d.Decode(&dest, ctx); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, tmp{
+		A: Code{
+			loc: Location{
+				Lin:  2,
+				XLin: 6,
+				XCol: 1,
+			},
+			Syntax: "go",
+			Code: `package main
+
+func main() {
+    panic("error")
+}
+`,
+		},
+		B: Comment("just a text\n"),
+	}, dest)
 }

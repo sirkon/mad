@@ -7,7 +7,9 @@ type Context struct {
 
 // NewContext ...
 func NewContext() Context {
-	return Context{}
+	res := Context{}
+	res.data = append(res.data, map[string]interface{}{})
+	return res
 }
 
 // New creates new context generation
@@ -44,4 +46,9 @@ func (c Context) GetString(key string, d string) string {
 		return d
 	}
 	return res.(string)
+}
+
+// Steady sets the value into the first level
+func (c Context) Steady(key string, value interface{}) {
+	c.data[0][key] = value
 }
