@@ -12,6 +12,7 @@
 // regression.md
 // regression2.md
 // scalar_decoder.md
+// statuses.md
 // struct_easy.md
 // struct_real.md
 // test.md
@@ -97,7 +98,7 @@ func bindataGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511551529, 0)}
+	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511559370, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -322,6 +323,26 @@ func scalar_decoderMd() (*asset, error) {
 	return a, nil
 }
 
+var _statusesMd = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\xcc\xb1\x09\x02\x41\x10\x46\xe1\x7c\xaa\x18\xb0\x81\x45\xce\xd0\x62\xac\xe1\xce\x5c\x3d\x14\x03\x41\xec\x64\x05\x07\x17\x65\xd9\x16\xde\xdf\x91\x6c\x60\x72\xc9\x8b\x3e\xde\x6a\x9c\x76\xd3\x7e\xdc\xae\x53\x32\x3e\xae\x59\x47\x1a\xa1\xb3\x66\xa7\xe9\x40\xd1\x55\x0f\xbe\x66\x7f\x39\xa4\xc1\xa8\x94\x4e\x74\x77\x2a\xd1\x93\x97\x6e\xd3\x8f\xc1\x93\xac\x93\x6e\x4e\xa3\xf0\xe6\x45\xe8\xf2\x0b\x00\x00\xff\xff\xc4\x59\x52\xc9\x75\x00\x00\x00")
+
+func statusesMdBytes() ([]byte, error) {
+	return bindataRead(
+		_statusesMd,
+		"statuses.md",
+	)
+}
+
+func statusesMd() (*asset, error) {
+	bytes, err := statusesMdBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "statuses.md", size: 117, mode: os.FileMode(436), modTime: time.Unix(1511559299, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _struct_easyMd = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x52\x56\x48\xe4\x4a\x48\x48\x48\xcf\xe7\x2a\x48\x4c\xce\x4e\x4c\x4f\x55\xc8\x4d\xcc\xcc\xe3\xe2\x4a\x2b\xcd\x4b\x06\x33\x35\x34\x15\xaa\xb9\x38\x0b\x12\xf3\x32\x93\x35\x94\x52\x8b\x8a\xf2\x8b\x94\x34\xb9\x6a\x41\x7a\xb8\xb8\x94\x15\x92\xb8\xb2\x4a\x8b\x4b\x14\x12\x15\x4a\x52\x2b\x4a\x00\x01\x00\x00\xff\xff\x2a\x52\x0d\xd3\x4c\x00\x00\x00")
 
 func struct_easyMdBytes() ([]byte, error) {
@@ -446,6 +467,7 @@ var _bindata = map[string]func() (*asset, error){
 	"regression.md": regressionMd,
 	"regression2.md": regression2Md,
 	"scalar_decoder.md": scalar_decoderMd,
+	"statuses.md": statusesMd,
 	"struct_easy.md": struct_easyMd,
 	"struct_real.md": struct_realMd,
 	"test.md": testMd,
@@ -503,6 +525,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"regression.md": &bintree{regressionMd, map[string]*bintree{}},
 	"regression2.md": &bintree{regression2Md, map[string]*bintree{}},
 	"scalar_decoder.md": &bintree{scalar_decoderMd, map[string]*bintree{}},
+	"statuses.md": &bintree{statusesMd, map[string]*bintree{}},
 	"struct_easy.md": &bintree{struct_easyMd, map[string]*bintree{}},
 	"struct_real.md": &bintree{struct_realMd, map[string]*bintree{}},
 	"test.md": &bintree{testMd, map[string]*bintree{}},

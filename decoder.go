@@ -447,11 +447,30 @@ func extractFieldInfo(tag string, errf func(format string, a ...interface{}) err
 	return
 }
 
+func extractMad(tag string) string {
+	chunks := strings.Split(tag, ",")
+	pos := -1
+	for i, chunk := range chunks {
+		if strings.HasPrefix(chunk, `mad:"`) {
+			pos = i
+			break
+		}
+	}
+	if pos < 0 {
+		return ""
+	}
+	chunk := chunks[pos]
+	if !strings.HasSuffix(chunk, `"`) {
+		return ""
+	}
+	return chunk[5 : len(chunk)-1]
+}
+
 func extractFieldsMetainfo(dest interface{}) (fields []fieldDescription, err error) {
 	tmp := reflect.ValueOf(dest).Elem()
 	limit := tmp.NumField()
 	for i := 0; i < limit; i++ {
-		rawMad := tmp.Type().Field(i).Tag.Get("mad")
+		rawMad := extractMad(string(tmp.Type().Field(i).Tag))
 		if len(rawMad) == 0 {
 			continue
 		}
@@ -537,13 +556,21 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		index := indices[0]
 		fieldMeta := fields[index]
 		// TODO check if Sufficient and let it process itself if it is.
-		fieldValue := reflect.ValueOf(dest).Elem().Field(index).Addr().Interface()
 		newCtx := ctx.New()
 		for k, v := range fieldMeta.labels {
 			ctx.Set(k, v)
 		}
-		if err = d.Decode(fieldValue, newCtx); err != nil {
-			return err
+		if v, ok := reflect.ValueOf(dest).Elem().Field(index).Interface().(Sufficient); ok {
+			n, err := v.Decode(v, h.Content, d, ctx)
+			if err != nil {
+				return err
+			}
+			reflect.ValueOf(dest).Elem().Field(index).Set(reflect.ValueOf(n))
+		} else {
+			fieldValue := reflect.ValueOf(dest).Elem().Field(index).Addr().Interface()
+			if err = d.Decode(fieldValue, newCtx); err != nil {
+				return err
+			}
 		}
 		d.levels = d.levels[:len(d.levels)-1]
 		fieldMeta.checked = true

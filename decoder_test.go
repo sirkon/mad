@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"testing"
 
+	"fmt"
+
+	"strings"
+
+	"strconv"
+
 	"github.com/sirkon/mad/testdata"
 	"github.com/stretchr/testify/require"
 )
@@ -395,4 +401,63 @@ func TestStructReal(t *testing.T) {
 			},
 		},
 	}, dest)
+}
+
+type resp map[int]Comment
+
+func (r *resp) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Sufficient, error) {
+	dd, ok := dest.(*resp)
+	if !ok {
+		return nil, fmt.Errorf("dest must be %T, got %T", r, dest)
+	}
+	var tmp resp
+	if dd == nil || *dd == nil {
+		tmp = resp(map[int]Comment{})
+	} else {
+		tmp = *dd
+	}
+	chunk := strings.Split(header.Value, "=")
+	statLit := chunk[1]
+	status64, err := strconv.ParseInt(statLit, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	status := int(status64)
+	var cmt Comment
+	if err := d.Decode(&cmt, ctx); err != nil {
+		return nil, err
+	}
+	tmp[status] = cmt
+	return &tmp, nil
+}
+
+func (r *resp) Required() bool {
+	return true
+}
+
+func TestStatuses(t *testing.T) {
+	data, err := testdata.Asset("statuses.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var dest struct {
+		S *resp `mad:"status=\d+"`
+	}
+	ctx := NewContext()
+	if err := d.Decode(&dest, ctx); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t,
+		resp{
+			200: Comment("к успеху пришёл\n"),
+			404: Comment("нихуя не нашёл\n"),
+			500: Comment("ебать пиздец\n"),
+		},
+		*dest.S,
+	)
 }
