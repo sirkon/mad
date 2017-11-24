@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/sirkon/mad/tagparser"
 )
 
 // Unmarshaler is implemented by types that can unmarshal
@@ -447,30 +449,11 @@ func extractFieldInfo(tag string, errf func(format string, a ...interface{}) err
 	return
 }
 
-func extractMad(tag string) string {
-	chunks := strings.Split(tag, ",")
-	pos := -1
-	for i, chunk := range chunks {
-		if strings.HasPrefix(chunk, `mad:"`) {
-			pos = i
-			break
-		}
-	}
-	if pos < 0 {
-		return ""
-	}
-	chunk := chunks[pos]
-	if !strings.HasSuffix(chunk, `"`) {
-		return ""
-	}
-	return chunk[5 : len(chunk)-1]
-}
-
 func extractFieldsMetainfo(dest interface{}) (fields []fieldDescription, err error) {
 	tmp := reflect.ValueOf(dest).Elem()
 	limit := tmp.NumField()
 	for i := 0; i < limit; i++ {
-		rawMad := extractMad(string(tmp.Type().Field(i).Tag))
+		rawMad := tagparser.ExtractMad(string(tmp.Type().Field(i).Tag))
 		if len(rawMad) == 0 {
 			continue
 		}
@@ -555,7 +538,6 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		// process the field
 		index := indices[0]
 		fieldMeta := fields[index]
-		// TODO check if Sufficient and let it process itself if it is.
 		newCtx := ctx.New()
 		for k, v := range fieldMeta.labels {
 			ctx.Set(k, v)

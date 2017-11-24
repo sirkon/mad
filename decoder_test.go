@@ -2,13 +2,10 @@ package mad
 
 import (
 	"bytes"
-	"testing"
-
 	"fmt"
-
-	"strings"
-
 	"strconv"
+	"strings"
+	"testing"
 
 	"github.com/sirkon/mad/testdata"
 	"github.com/stretchr/testify/require"
