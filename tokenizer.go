@@ -11,13 +11,13 @@ import (
 	"github.com/sirkon/mad/rawparser"
 )
 
-// loc for tokens that can locate itself
+// Locatable for tokens that can locate itself
 type Locatable interface {
 	Start() (lin int, col int)
 	Finish() (lin int, col int)
 }
 
-// Finish is a getToken position in an input stream
+// Location is a getToken position in an input stream
 type Location struct {
 	Lin int
 	Col int
@@ -517,16 +517,20 @@ func NewTokenizer(input []byte) *MDTokenizer {
 	}
 }
 
-// next moves underlying tokenizer to its next
+// Next moves underlying tokenizer to its next
 func (ts *MDTokenizer) Next() bool {
 	if !ts.confirmed {
 		return true
 	}
 	ts.confirmed = false
-	return ts.t.next()
+	res := ts.t.next()
+	if !res {
+		ts.confirmed = true
+	}
+	return res
 }
 
-// getToken returns token from underlying tokenizer
+// Token returns token from underlying tokenizer
 func (ts *MDTokenizer) Token() Locatable {
 	if ts.token == nil {
 		ts.token = ts.t.getToken()
@@ -558,7 +562,7 @@ func (rs *RawStorage) append(v Locatable) {
 	rs.items = append(rs.items, v)
 }
 
-// header consumes header
+// Header consumes header
 func (rs *RawStorage) Header(lin, col, xcol int, value string) {
 	rs.append(header{
 		Location: Location{
@@ -640,7 +644,7 @@ func (rs *RawStorage) ValueString(lin, col, xcol int, value string) {
 	})
 }
 
-// boolean consumes value as boolean
+// Boolean consumes value as boolean
 func (rs *RawStorage) Boolean(lin, col, xcol int, value string) {
 	var val bool
 	switch value {
@@ -714,13 +718,15 @@ func (f *FullTokenizer) Next() bool {
 		f.rawData.index++
 		f.confirmed = false
 		return true
-	} else {
-		f.rawData.items = nil
-		f.rawData.index = 0
-		f.confirmed = false
 	}
+	f.rawData.items = nil
+	f.rawData.index = 0
+	f.confirmed = false
 	res := f.t7r.Next()
 	f.Token()
+	if !res {
+		f.confirmed = true
+	}
 	return res
 }
 

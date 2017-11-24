@@ -354,3 +354,45 @@ func main() {
 		B: Comment("just a text\n"),
 	}, dest)
 }
+
+func TestStructReal(t *testing.T) {
+	type nested struct {
+		Prepare Code `mad:"prepare,syntax=sql cql"`
+	}
+	type tmp struct {
+		A     int     `mad:"a"`
+		B     string  `mad:"b"`
+		C     float64 `mad:"c"`
+		Query nested  `mad:"query"`
+	}
+	var dest tmp
+	data, err := testdata.Asset("struct_real.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := NewContext()
+	if err := d.Decode(&dest, ctx); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, tmp{
+		A: 1,
+		B: "2",
+		C: 3.5,
+		Query: nested{
+			Prepare: Code{
+				loc: Location{
+					Lin:  9,
+					Col:  0,
+					XLin: 9,
+					XCol: 37,
+				},
+				Syntax: "sql",
+				Code:   "CREATE TABLE a AS SELECT * FROM table\n",
+			},
+		},
+	}, dest)
+}

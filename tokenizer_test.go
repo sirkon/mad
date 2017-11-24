@@ -677,3 +677,55 @@ func TestLevelNormalization(t *testing.T) {
 		},
 		tokens)
 }
+
+func TestRegression2(t *testing.T) {
+	data, err := testdata.Asset("regression2.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t1 := NewTokenizer(data)
+	t2 := NewFullTokenizer(t1)
+	var tokens = []interface{}{}
+	for t2.Next() {
+		tokens = append(tokens, t2.Token())
+		t2.Confirm()
+	}
+	for _, err := range t2.Err() {
+		t.Error(err)
+	}
+	require.Equal(t,
+		[]interface{}{
+			header{
+				Location: Location{XCol: 7},
+				Content:  String{Location: Location{Lin: 0, Col: 1, XLin: 0, XCol: 7}, Value: "field1"},
+				Level:    1,
+			},
+			header{
+				Location: Location{Lin: 1, Col: 0, XLin: 1, XCol: 9},
+				Content:  String{Location: Location{Lin: 1, Col: 3, XLin: 1, XCol: 9}, Value: "field2"},
+				Level:    2},
+			code{
+				Location: Location{Lin: 2, Col: 0, XLin: 4, XCol: 3},
+				Syntax:   String{Location: Location{Lin: 2, Col: 3, XLin: 2, XCol: 6}, Value: "sql"},
+				Content:  String{Location: Location{Lin: 3, Col: 0, XLin: 3, XCol: 6}, Value: "SELECT\n"}},
+		}, tokens)
+}
+
+func TestRegression3(t *testing.T) {
+	data, err := testdata.Asset("codecomment.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t1 := NewTokenizer(data)
+	t2 := NewFullTokenizer(t1)
+	var tokens = []interface{}{}
+	for t2.Next() {
+		tokens = append(tokens, t2.Token())
+		t2.Confirm()
+	}
+	for t2.Next() {
+		tokens = append(tokens, t2.Token())
+		t2.Confirm()
+	}
+	require.Len(t, tokens, 2)
+}

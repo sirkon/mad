@@ -47,10 +47,8 @@ func (c *CommentCode) Decode(d *Decoder, ctx Context) error {
 	if err := c.Comment.Decode(d, ctx); err != nil {
 		return err
 	}
-	if err := c.Code.Decode(d, ctx); err != nil {
-		return err
-	}
-	return nil
+	err := c.Code.Decode(d, ctx)
+	return err
 }
 
 // CodeComment for code prolonged by comment
@@ -64,8 +62,6 @@ func (c *CodeComment) Decode(d *Decoder, ctx Context) error {
 	if err := c.Code.Decode(d, ctx); err != nil {
 		return err
 	}
-	if err := c.Comment.Decode(d, ctx); err != nil {
-		return err
-	}
-	return nil
+	err := c.Comment.Decode(d, ctx)
+	return err
 }

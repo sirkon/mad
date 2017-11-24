@@ -538,7 +538,6 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		fieldMeta := fields[index]
 		// TODO check if Sufficient and let it process itself if it is.
 		fieldValue := reflect.ValueOf(dest).Elem().Field(index).Addr().Interface()
-		d.levels = d.levels[:len(d.levels)-1]
 		newCtx := ctx.New()
 		for k, v := range fieldMeta.labels {
 			ctx.Set(k, v)
@@ -546,6 +545,7 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		if err = d.Decode(fieldValue, newCtx); err != nil {
 			return err
 		}
+		d.levels = d.levels[:len(d.levels)-1]
 		fieldMeta.checked = true
 		fields[index] = fieldMeta
 	}
