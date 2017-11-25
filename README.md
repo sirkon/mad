@@ -5,11 +5,11 @@ This is a literate configuration format library for Go inspired by Markdown.
 
 Installation:
 
-* prefered way via the dep
+* the prefered way is via the dep
     ```
     dep ensure -add github.com/sirkon/mad    
     ```
-* via the go get, not recommended
+* using go get is not recommended, but still should work
     ```
     go get github.com/sirkon/mad
     ```
@@ -67,5 +67,7 @@ interfaces were introduced:
 * It is possible to control fragment order in Markdown files (define your `mad.Decodable` type and write down desired decoding order manually)
 * It is possible to use header as a source of information, fulfilling fields with data from header text (define your `mad.Sufficient` type)
 * It is possible to reimplement how scalar types are treated (define your own `mad.Unmarshaler` type)
+* It is possible to match by regexp, not just by fixed name. Usually `mad .Sufficient` is used in these cases as a field value type
+* It is possible to match against several syntax types, for instance, use `syntax=python perl` to match against perl or python fenced code block
 
 see at the harder example [here](HARD.md)
