@@ -14,7 +14,6 @@ import (
 
 	"bytes"
 
-	"github.com/sirkon/mad/tagparser"
 	"github.com/sirkon/message"
 )
 
@@ -458,7 +457,7 @@ func extractFieldsMetainfo(dest interface{}) (fields []fieldDescription, err err
 	tmp := reflect.ValueOf(dest).Elem()
 	limit := tmp.NumField()
 	for i := 0; i < limit; i++ {
-		rawMad := tagparser.ExtractMad(string(tmp.Type().Field(i).Tag))
+		rawMad := extractMad(string(tmp.Type().Field(i).Tag))
 		if len(rawMad) == 0 {
 			continue
 		}
