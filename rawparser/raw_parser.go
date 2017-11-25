@@ -1,7 +1,6 @@
 // Generated from Raw.g4 by ANTLR 4.7.
 
 package rawparser // Raw
-
 import (
 	"fmt"
 	"reflect"

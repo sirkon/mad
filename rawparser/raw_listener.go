@@ -1,7 +1,6 @@
 // Generated from Raw.g4 by ANTLR 4.7.
 
 package rawparser // Raw
-
 import "github.com/antlr/antlr4/runtime/Go/antlr"
 
 // RawListener is a complete listener for a parse tree produced by RawParser.
