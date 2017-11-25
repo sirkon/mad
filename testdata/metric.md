@@ -8,7 +8,7 @@ type = "count(country, version)"
 
 these are queries for unique users who published stories in a day
 
-* for all countries and vesions
+* per all countries and vesions
 ```sql
 SELECT
     $Date AS date,
@@ -19,7 +19,7 @@ FROM stories
 WHERE date = $Date
 ```
 
-* for version in all countries
+* per version within all countries
 ```sql
 SELECT
     $Date AS date,
@@ -31,7 +31,7 @@ WHERE date = $Date
 GROUP BY version
 ```
 
-* for country no matter the version
+* per country no matter the version
 ```sql
 SELECT
     $Date AS date,
@@ -43,7 +43,7 @@ WHERE date = $Date
 GROUP BY country
 ```
 
-* for country and version
+* per country and version
 ```sql
 SELECT
     $Date AS date,

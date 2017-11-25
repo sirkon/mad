@@ -10,7 +10,12 @@ import (
 	"strings"
 	"unicode"
 
+	"os"
+
+	"bytes"
+
 	"github.com/sirkon/mad/tagparser"
+	"github.com/sirkon/message"
 )
 
 // Unmarshaler is implemented by types that can unmarshal
@@ -656,4 +661,51 @@ func (d *Decoder) Decode(dest interface{}, ctx Context) error {
 		panic(fmt.Errorf("type %T cannot be a target for decoding", dest))
 	}
 	return nil
+}
+
+func decode(r io.Reader, dest interface{}, ctx Context) error {
+	decoder, err := NewDecoder(r)
+	if err != nil {
+		return err
+	}
+	if err := decoder.Decode(dest, ctx); err != nil {
+		return err
+	}
+	if decoder.tokens.Next() {
+		token := decoder.token()
+		lin, col := token.Start()
+		return LocatedError{
+			Lin: lin,
+			Col: col,
+			Err: fmt.Errorf("syntax error"),
+		}
+	}
+	return nil
+}
+
+// Unmarshal unmarshals data from input with context ctx provided into a dest object. Return error != nil on error.
+// err may be of type mad.LocatedError what provides positional information in (line, column) pair as well as error
+// message.
+func Unmarshal(input []byte, dest interface{}, ctx Context) error {
+	return decode(bytes.NewReader(input), dest, ctx)
+}
+
+// UnmarshalFile unmarshals data right from the input file and returns error message in the form of <file>:<lin>:<col>: <msg>
+func UnmarshalFile(fileName string, dest interface{}, ctx Context) error {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			message.Error(err)
+		}
+	}()
+	err = decode(file, dest, ctx)
+	if err == nil {
+		return nil
+	} else if _, ok := err.(LocatedError); ok {
+		return fmt.Errorf("%s:%s", fileName, err)
+	}
+	return err
 }

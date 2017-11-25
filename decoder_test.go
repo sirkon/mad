@@ -464,15 +464,13 @@ func TestRealStructure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := NewDecoder(bytes.NewBuffer(data))
 
 	var dest struct {
 		Type    string `mad:"type"`
 		Queries []Code `mad:"queries,syntax=sql"`
 	}
 
-	ctx := NewContext()
-	if err := d.Decode(&dest, ctx); err != nil {
+	if err := Unmarshal(data, &dest, NewContext()); err != nil {
 		t.Fatal(err)
 	}
 
