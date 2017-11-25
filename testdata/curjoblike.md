@@ -23,7 +23,7 @@
 }
 ```
 
-### response(ERROR, NOT_AVALABLE)
+### response(ERROR, NOT_AVAILABLE)
 Only one sample for status `ERROR` is given as others has the same scheme
 ```json
 {

@@ -404,8 +404,8 @@ func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 
 		// create map value and decode it then fill it
 		vdest := reflect.New(reflect.ValueOf(dest).Elem().Type().Elem()).Interface()
-		d.levels = d.levels[:len(d.levels)-1]
 		err := d.Decode(vdest, ctx)
+		d.levels = d.levels[:len(d.levels)-1]
 		if err != nil {
 			return err
 		}
