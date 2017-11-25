@@ -1,3 +1,4 @@
+	t.Log(dest.Queries)
 # Typical usecase.
 
 Statistical systems based on storage with SQL interface, such as [Clickhouse](https://clickhouse.yandex), 
@@ -6,7 +7,7 @@ a lot of SQL. At my previous job (2015-2017) we have a tree of metrics like `<pe
 For instance `daily.chat.story.uniq_creators` which has a queury to compute amount of uniq users who created a story through
 a given date. We ended by mapping this name into a file system path:
 `${METRIC_DIR}/daily/chat/story/uniq_creators.md`
-where the file itself looked like
+where the file itself was a piece of YAML which had a tendency to become unreadable at times. 
 
 ![example](usecase_example.png)
 
@@ -14,31 +15,19 @@ the query launcher will consume this file in a way similar to:
 
 ```go
 …
-input, err := ioutil.ReadFile("daily/chat/story/uniq_creators.md")
+input, err := ioutil.ReadFile("daily/story/uniq_creators.md")
 if err != nil {
 	return err
 }
 var metric struct {
-	Queries []mad.Source `mad:"queries,source=sql"`
+	Type string `mad:"type"`
+	Queries []mad.Source `mad:"queries,syntax=sql"`
 }
 if err := mad.Unmarshal(input, &metric); err != nil {
 	return err
 }
 …
 ``` 
-of course we could use other structured formats suitable for humans, such as YAML, but:
 
-1. Its toolset is nowhere near as developed as Markdown support, where you have syntax
-highlighting, folding, etc for fenced code blocks (VSCode on Ubuntu 17.10 in this example).
-2. YAML unmarshaller is a bit too allowing. We wanted to get an error when we declare a non-pointer field 
-    ```go
-    type Metric struct {
-        …
-        Field mad.Source `mad:"field,source=json"`
-        …
-    }
-    ```
-    and the Markdown input doesn't have `# field` header.
- 
 
 

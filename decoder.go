@@ -489,6 +489,7 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 	realType := reflect.ValueOf(dest).Elem().Interface()
 	taken := map[string]Locatable{}
 	for d.tokens.Next() {
+		d.passComment()
 		token := d.token()
 
 		h, ok := token.(header)

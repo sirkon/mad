@@ -458,3 +458,24 @@ func TestStatuses(t *testing.T) {
 		*dest.S,
 	)
 }
+
+func TestRealStructure(t *testing.T) {
+	data, err := testdata.Asset("metric.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDecoder(bytes.NewBuffer(data))
+
+	var dest struct {
+		Type    string `mad:"type"`
+		Queries []Code `mad:"queries,syntax=sql"`
+	}
+
+	ctx := NewContext()
+	if err := d.Decode(&dest, ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	require.Equal(t, "count(country, version)", dest.Type)
+	require.Len(t, dest.Queries, 4)
+}
