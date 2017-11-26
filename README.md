@@ -55,7 +55,7 @@ var job struct {
 It can be decoded from file as
 
 ```go
-if err := mad.UnmarshalFile(&job, mad.NewContext()); err != nil {
+if err := mad.UnmarshalFile("file.md", &job, mad.NewContext()); err != nil {
 	panic(err)
 }
 ```
