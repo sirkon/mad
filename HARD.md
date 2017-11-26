@@ -5,7 +5,7 @@ nested fenced code blocks are a bit tricky to say at least).
 
 ![usage_example](allfeatures.png)
 
-And now it is better just to write how to use it
+And now it is better just to write how to decode it into the Go structure.
 
 ```go
 package main
@@ -96,4 +96,4 @@ func (s *SonInfo) Decode(d *mad.Decoder, ctx mad.Context) error {
 
 # What's left
 We didn't cover how to use `mad.Unmarshaler`. This is easy though, just like with `json.Unmarshaler`. It is a minor 
-feature and can only be used for a data definited in raw fenced code blocks.
+feature and can only be used for a data defined in raw fenced code blocks.
