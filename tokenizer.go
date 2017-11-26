@@ -32,6 +32,16 @@ func (l Location) Start() (lin int, col int) {
 	return l.Lin, l.Col
 }
 
+// Point points to a position
+func Point(lin, col int) Location {
+	return Location{
+		Lin:  lin,
+		Col:  col,
+		XLin: lin,
+		XCol: col,
+	}
+}
+
 // Finish to implement loc
 func (l Location) Finish() (lin int, col int) {
 	return l.XLin, l.XCol

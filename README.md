@@ -25,41 +25,72 @@ nesting in data.
 
 ## Simplest usage
 
-Take a look at short example:
+Let we have a 
+* some temporary table with preaggregated data and several queries running on this table. Let we call
+this temporary table creation a *prepare*. 
+* quries may run on a temporary table and they also may use other tables
+* actually, it is rather uncommon situation when we need a preaggregated table. In the majority of cases we
+    will use existing ones. Thus, the *prepare* process is not mandatory.
+* prepare query creates table. There should be a method to delete it. 
+    
+In final, we have
+* optionally prepare create and delete queries
+* regular queries
 
-![easy_example_screenshot](easy_example.png)
-
-Now about what consumes this and how:
+Let's express this in a Go structure:
 
 ```go
-package main
-
-import (
-	"github.com/sirkon/mad"
-	"os"
-	"io/ioutil"
-	"strings"
-)
-
-func main() {
-	input := []byte("```raw\nage = 22\nname = \"Name\"\n```\n\n# field1\n## code\n```python\n```\n\n## field2\nrandom content")
-	var dest struct {
-		Name   string `mad:"name"`
-		Age    int    `mad:"age"`
-		Field1 struct {
-			Code   mad.Code    `mad:"code,syntax=python"`
-			Field2 mad.Comment `mad:"field2"`
-		} `mad:"field1"`
-	}
-	if err := mad.Unmarshal(input, &dest, mad.NewContext()); err != nil {
-		panic(err)
-	}
+import "github.com/sirkon/mad"
+…
+var job struct {
+	Prepare *struct {
+		Create mad.Code `mad:"create"`
+		Delete mad.Code `mad:"delete"`
+	} `mad:"prepare,syntax=sql"`
+	
+	Queries []mad.Code `mad:"queries,syntax=sql"`
 }
 ```
 
-Here:
-* fenced code block with `raw` syntax is used to deliver scalar values. Integers, floating points, strings and
-boolean values are supported
+It can be decoded from file as
+
+```go
+if err := mad.UnmarshalFile(&job, mad.NewContext()); err != nil {
+	panic(err)
+}
+```
+
+And now how the markdown text would look like for this example:
+
+````markdown
+# prepare
+
+## create
+```sql
+CREATE TABLE tmp AS SELECT * FROM table
+```
+
+## delete
+```sql
+DROP TABEL tmp;
+```
+
+
+# queries
+
+* total amount of events
+```sql
+SELECT count(1) FROM tmp;
+```
+
+* amount of users who created events
+```sql
+SELECT uniq(user_id) FROM tmp;
+```
+````
+
+
+* You can also consume integers, floating points, strings and booleans using `raw` code blocks (see [advanced example](HARD.md)):
 * you need `mad.Code` type to consume code block
 * you need `mad.Comment` type to consume comment block
 * comments (everything, that is not header or fenced code block) are normally ignored (this is a bug if they aren't) 
@@ -76,3 +107,11 @@ interfaces were introduced:
 * It is possible to match against several syntax types, for instance, use `syntax=python perl` to match against perl or python fenced code block
 
 see at the harder example [here](HARD.md)
+
+## Why not to use YAML with text blocks?
+
+Because
+
+* You don't have same "fenced code blocks" in YAML, thus you don't have syntax highlighting, folding, etc for them
+* The human readable reporting was in mind, thus you can get positions of code blocks and headers. YAML parsers available
+    for go cannot pass this information down to the user. 
