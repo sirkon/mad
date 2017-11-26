@@ -1,9 +1,17 @@
 # mad
 [![Build Status](https://travis-ci.org/sirkon/mad.svg?branch=master)](https://travis-ci.org/sirkon/mad)
 
-This is a literate configuration format library for Go inspired by Markdown. 
+This is a literate configuration format library for Go inspired by Markdown. It means this can be
+your configuration (screenshot of the preview in VSCode on Ubuntu 17.10):
 
-Installation:
+![screenshot](thisisconf.png)
+
+
+Read about typical usecases [here](USECASES.md). 
+In short, ___mad___ library is useful in cases where pieces of structured data or code are needed and there's not much
+nesting in data. 
+
+## Installation
 
 * the prefered way is via the dep
     ```
@@ -13,10 +21,7 @@ Installation:
     ```
     go get github.com/sirkon/mad
     ```
-
-Read about typical usecases [here](USECASES.md). 
-In short, ___mad___ library is useful in cases where pieces of structured data or code are needed and there's not much
-nesting in data. Think about SQLs here at first.
+ 
 
 ## Simplest usage
 
