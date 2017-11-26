@@ -70,9 +70,9 @@ This simple example is not different from what you can used to with stdlib JSON 
 fields tagged with `mad:".."` can be filled by Decoder). But this is human oriented format and that's why special
 interfaces were introduced:
 * It is possible to control fragment order in Markdown files (define your `mad.Decodable` type and write down desired decoding order manually)
-* It is possible to use header as a source of information, fulfilling fields with data from header text (define your `mad.Sufficient` type)
+* It is possible to use header as a source of information, fulfilling fields with data from header text (define your `mad.Manual` type)
 * It is possible to reimplement how scalar types are treated (define your own `mad.Unmarshaler` type)
-* It is possible to match by regexp, not just by fixed name. Usually `mad .Sufficient` is used in these cases as a field value type
+* It is possible to match by regexp, not just by fixed name. Usually `mad.Manual` is used in these cases as a field value type
 * It is possible to match against several syntax types, for instance, use `syntax=python perl` to match against perl or python fenced code block
 
 see at the harder example [here](HARD.md)

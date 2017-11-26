@@ -475,7 +475,7 @@ func extractFieldsMetainfo(dest interface{}) (fields []fieldDescription, err err
 		default:
 			f.required = true
 		}
-		if v, ok := dest.(Sufficient); ok {
+		if v, ok := dest.(Manual); ok {
 			// This is sufficient type
 			f.required = v.Required()
 		}
@@ -547,7 +547,7 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		for k, v := range fieldMeta.labels {
 			ctx.Set(k, v)
 		}
-		if v, ok := reflect.ValueOf(dest).Elem().Field(index).Interface().(Sufficient); ok {
+		if v, ok := reflect.ValueOf(dest).Elem().Field(index).Interface().(Manual); ok {
 			n, err := v.Decode(v, h.Content, d, ctx)
 			if err != nil {
 				return err
@@ -663,6 +663,16 @@ func (d *Decoder) Decode(dest interface{}, ctx Context) error {
 }
 
 func decode(r io.Reader, dest interface{}, ctx Context) error {
+	var tmp struct {
+		Dest Manual `mad:".*"`
+	}
+	if v, ok := dest.(Manual); ok {
+		tmp.Dest = v
+		err := decode(r, &tmp, ctx)
+		v = tmp.Dest
+		return err
+	}
+
 	decoder, err := NewDecoder(r)
 	if err != nil {
 		return err

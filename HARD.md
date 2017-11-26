@@ -35,8 +35,8 @@ type ExtendedFamily struct {
 // Sons are stored in this map
 type Sons map[string]SonInfo
 
-// Decode to implement mad.Sufficient
-func (s Sons) Decode(dest interface{}, header mad.String, d *mad.Decoder, ctx mad.Context) (mad.Sufficient, error) {
+// Decode to implement mad.Manual
+func (s Sons) Decode(dest interface{}, header mad.String, d *mad.Decoder, ctx mad.Context) (mad.Manual, error) {
 	// check what the dest is and initialize it if needed
 	v, ok := dest.(Sons)
 	if !ok {
@@ -66,7 +66,7 @@ func (s Sons) Decode(dest interface{}, header mad.String, d *mad.Decoder, ctx ma
 	return v, nil
 }
 
-// Require to implement mad.Sufficient
+// Require to implement mad.Manual
 func (s Sons) Required() bool {
 	return false
 }

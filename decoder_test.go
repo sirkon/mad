@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"fmt"
+
 	"github.com/sirkon/mad/testdata"
 	"github.com/stretchr/testify/require"
 )
@@ -394,5 +396,47 @@ func TestStructReal(t *testing.T) {
 				Code:   "CREATE TABLE a AS SELECT * FROM table\n",
 			},
 		},
+	}, dest)
+}
+
+// Example of direct manual type usage
+type key2value map[string]string
+
+func (k key2value) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Manual, error) {
+	v, ok := dest.(key2value)
+	if !ok {
+		return nil, fmt.Errorf("dest must have type %T, got %T instead", k, dest)
+	}
+	if v == nil {
+		v = key2value{}
+	}
+
+	// pass string value – load it, but don't consume
+	var tmp string
+	if err := d.Decode(&tmp, ctx); err != nil {
+		return nil, err
+	}
+	v[header.Value] = header.Value
+
+	return v, nil
+}
+
+func (k key2value) Required() bool {
+	panic("implement me")
+}
+
+func TestDirectManualUsage(t *testing.T) {
+	data, err := testdata.Asset("keycheck.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dest := key2value{}
+	if err := Unmarshal(data, dest, NewContext()); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, key2value{
+		"key1": "key1",
+		"key2": "key2",
+		"key3": "key3",
 	}, dest)
 }

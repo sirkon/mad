@@ -14,7 +14,7 @@ import (
 
 type resp map[int]Comment
 
-func (r *resp) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Sufficient, error) {
+func (r *resp) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Manual, error) {
 	dd, ok := dest.(*resp)
 	if !ok {
 		return nil, fmt.Errorf("dest must be %T, got %T", r, dest)
@@ -125,7 +125,7 @@ func (p *StatusExtractor) Extract(line string) (bool, error) {
 	return true, nil
 }
 
-func (r *response) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Sufficient, error) {
+func (r *response) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Manual, error) {
 	dd, ok := dest.(*response)
 	if !ok {
 		return nil, fmt.Errorf("dest must be %T, got %T", r, dest)
@@ -219,7 +219,7 @@ func (s *SonInfo) Decode(d *Decoder, ctx Context) error {
 
 type Sons map[string]SonInfo
 
-func (s Sons) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Sufficient, error) {
+func (s Sons) Decode(dest interface{}, header String, d *Decoder, ctx Context) (Manual, error) {
 	// check what the dest is and initialize it if needed
 	v, ok := dest.(Sons)
 	if !ok {

@@ -8,6 +8,7 @@
 // curjoblike.md
 // easy_example.md
 // generate.go
+// keycheck.md
 // level_normalization.md
 // maps.md
 // metric.md
@@ -122,7 +123,7 @@ func bindataGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511640747, 0)}
+	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511722410, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -243,6 +244,26 @@ func generateGo() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "generate.go", size: 59, mode: os.FileMode(436), modTime: time.Unix(1510394881, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _keycheckMd = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4a\x48\x48\x28\x4a\x2c\xe7\xca\x4e\xad\x34\x54\xb0\x55\x50\x2a\x4b\xcc\x29\x4d\x35\x54\x02\xf1\x8d\xe0\x7c\x23\x30\xdf\x18\xce\x37\x56\xe2\x4a\x48\x48\x00\x04\x00\x00\xff\xff\x2f\x5d\x1e\x45\x3a\x00\x00\x00")
+
+func keycheckMdBytes() ([]byte, error) {
+	return bindataRead(
+		_keycheckMd,
+		"keycheck.md",
+	)
+}
+
+func keycheckMd() (*asset, error) {
+	bytes, err := keycheckMdBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "keycheck.md", size: 58, mode: os.FileMode(436), modTime: time.Unix(1511722392, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -547,6 +568,7 @@ var _bindata = map[string]func() (*asset, error){
 	"curjoblike.md": curjoblikeMd,
 	"easy_example.md": easy_exampleMd,
 	"generate.go": generateGo,
+	"keycheck.md": keycheckMd,
 	"level_normalization.md": level_normalizationMd,
 	"maps.md": mapsMd,
 	"metric.md": metricMd,
@@ -609,6 +631,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"curjoblike.md": &bintree{curjoblikeMd, map[string]*bintree{}},
 	"easy_example.md": &bintree{easy_exampleMd, map[string]*bintree{}},
 	"generate.go": &bintree{generateGo, map[string]*bintree{}},
+	"keycheck.md": &bintree{keycheckMd, map[string]*bintree{}},
 	"level_normalization.md": &bintree{level_normalizationMd, map[string]*bintree{}},
 	"maps.md": &bintree{mapsMd, map[string]*bintree{}},
 	"metric.md": &bintree{metricMd, map[string]*bintree{}},
