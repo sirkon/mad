@@ -72,7 +72,7 @@ CREATE TABLE tmp AS SELECT * FROM table
 
 ## delete
 ```sql
-DROP TABEL tmp;
+DROP TABLE tmp;
 ```
 
 
