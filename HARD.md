@@ -95,5 +95,7 @@ func (s *SonInfo) Decode(d *mad.Decoder, ctx mad.Context) error {
 ```
 
 # What's left
-We didn't cover how to use `mad.Unmarshaler`. This is easy though, just like with `json.Unmarshaler`. It is a minor 
-feature and can only be used for a data defined in raw fenced code blocks.
+* We didn't cover how to use `mad.Unmarshaler`. This is easy though, just like with `json.Unmarshaler`. It is a minor 
+    feature and can only be used for a data defined in raw fenced code blocks.
+* Manual types can be used directly – if you feed it into `Unmarshal` or `UnmarshalFile` function it will be used to 
+    consume all headers of the input stream. There are a quirky moments though, but this is advanced usage. 
