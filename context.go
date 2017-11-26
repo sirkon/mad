@@ -1,5 +1,7 @@
 package mad
 
+import "fmt"
+
 // Context context provides generational generic storage
 type Context struct {
 	data []map[string]interface{}
@@ -31,6 +33,16 @@ func (c Context) Get(key string) (value interface{}, ok bool) {
 		}
 	}
 	return
+}
+
+// MustGet gets a value from context using the Get. It replicates the Get except it raises the panic if no key has been
+// found
+func (c Context) MustGet(key string) interface{} {
+	res, ok := c.Get(key)
+	if !ok {
+		panic(fmt.Errorf("key `%s` not found in a context", key))
+	}
+	return res
 }
 
 // Set sets a binds a value to a key in a last generation of context

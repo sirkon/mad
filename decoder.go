@@ -52,6 +52,21 @@ func (d *Decoder) token() Locatable {
 	return res
 }
 
+// TokenError returns LocatedError using token to find Lin and Col position
+func TokenError(token Locatable, err error) LocatedError {
+	lin, col := token.Start()
+	return LocatedError{
+		Lin: lin,
+		Col: col,
+		Err: err,
+	}
+}
+
+// TokenErrorf returns formatted LocatedError using TokenError
+func TokenErrorf(token Locatable, format string, a ...interface{}) LocatedError {
+	return TokenError(token, fmt.Errorf(format, a...))
+}
+
 // LocatedError points to a error position
 type LocatedError struct {
 	Lin int
