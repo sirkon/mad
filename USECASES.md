@@ -24,7 +24,7 @@ if err != nil {
 }
 var metric struct {
 	Type string `mad:"type"`
-	Queries []mad.Source `mad:"queries,syntax=sql"`
+	Queries []mad.Code `mad:"queries,syntax=sql"`
 }
 if err := mad.Unmarshal(input, &metric, mad.NewContext()); err != nil {
 	return err
