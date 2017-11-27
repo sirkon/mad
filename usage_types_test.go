@@ -30,6 +30,7 @@ func TestCodeList_Decode(t *testing.T) {
 		t.Fatal(err)
 	}
 	require.Equal(t, "python", dest1.dest[0].Syntax)
+	require.Len(t, dest1.Codes(), 1)
 
 	require.True(t, decoder.tokens.Next())
 	h = decoder.token().(header)
@@ -42,6 +43,7 @@ func TestCodeList_Decode(t *testing.T) {
 	require.Equal(t, "python", dest2.dest[0].Syntax)
 	require.Equal(t, "sql", dest2.dest[1].Syntax)
 	require.Equal(t, "SELECT * FROM table \n", dest2.dest[1].Code)
+	require.Len(t, dest2.Codes(), 2)
 
 	require.True(t, decoder.tokens.Next())
 	h = decoder.token().(header)

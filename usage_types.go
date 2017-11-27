@@ -81,3 +81,8 @@ func (c *CodeList) Decode(d *Decoder, ctx Context) error {
 	c.dest = append([]Code{code}, c.dest...)
 	return nil
 }
+
+// Codes returns collected code fragments
+func (c *CodeList) Codes() []Code {
+	return c.dest
+}
