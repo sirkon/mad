@@ -562,14 +562,14 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		for k, v := range fieldMeta.labels {
 			ctx.Set(k, v)
 		}
-		if v, ok := reflect.ValueOf(dest).Elem().Field(index).Interface().(Manual); ok {
+		if v, ok := reflect.ValueOf(dest).Elem().Field(fieldMeta.index).Interface().(Manual); ok {
 			n, err := v.Decode(v, h.Content, d, ctx)
 			if err != nil {
 				return err
 			}
-			reflect.ValueOf(dest).Elem().Field(index).Set(reflect.ValueOf(n))
+			reflect.ValueOf(dest).Elem().Field(fieldMeta.index).Set(reflect.ValueOf(n))
 		} else {
-			fieldValue := reflect.ValueOf(dest).Elem().Field(index).Addr().Interface()
+			fieldValue := reflect.ValueOf(dest).Elem().Field(fieldMeta.index).Addr().Interface()
 			if err = d.Decode(fieldValue, newCtx); err != nil {
 				return err
 			}
