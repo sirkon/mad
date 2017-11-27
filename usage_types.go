@@ -65,3 +65,19 @@ func (c *CodeComment) Decode(d *Decoder, ctx Context) error {
 	err := c.Comment.Decode(d, ctx)
 	return err
 }
+
+// CodeList is a list of codes that requires at least one peace of code in a least
+type CodeList struct {
+	dest []Code
+}
+
+// Decode ...
+func (c *CodeList) Decode(d *Decoder, ctx Context) error {
+	var code Code
+	if err := d.Decode(&code, ctx); err != nil {
+		return err
+	}
+	_ = d.Decode(&c.dest, ctx)
+	c.dest = append([]Code{code}, c.dest...)
+	return nil
+}

@@ -1,10 +1,7 @@
 # mad
 [![Build Status](https://travis-ci.org/sirkon/mad.svg?branch=master)](https://travis-ci.org/sirkon/mad)
 
-This is a literate configuration format library for Go inspired by Markdown. It means this can be
-your configuration (screenshot of the preview in VSCode on Ubuntu 17.10):
-
-![screenshot](thisisconf.png)
+This is a literate configuration format library for Go inspired by Markdown. 
 
 
 Read about typical usecases [here](USECASES.md). 
@@ -30,11 +27,11 @@ Let we have a
 this temporary table creation a *prepare*. 
 * quries may run on a temporary table and they also may use other tables
 * actually, it is rather uncommon situation when we need a preaggregated table. In the majority of cases we
-    will use existing ones. Thus, the *prepare* process is not mandatory.
+    will use existing tables. Thus, the *prepare* process is not mandatory.
 * prepare query creates table. There should be a method to delete it. 
     
 In final, we have
-* optionally prepare create and delete queries
+* optional prepare create and delete queries
 * regular queries
 
 Let's express this in a Go structure:
@@ -46,7 +43,7 @@ var job struct {
 	Prepare *struct {
 		Create mad.Code `mad:"create"`
 		Delete mad.Code `mad:"delete"`
-	} `mad:"prepare,syntax=sql"`
+	} `mad:"prepare,syntax=sql"` // syntax will stay in the context of nested fields 
 	
 	Queries []mad.Code `mad:"queries,syntax=sql"`
 }

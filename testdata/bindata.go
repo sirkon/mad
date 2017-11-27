@@ -4,6 +4,7 @@
 // bindata.go
 // codearray.md
 // codecomment.md
+// codelist.md
 // commentcode.md
 // curjoblike.md
 // easy_example.md
@@ -123,7 +124,7 @@ func bindataGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511722410, 0)}
+	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511806236, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -164,6 +165,26 @@ func codecommentMd() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "codecomment.md", size: 54, mode: os.FileMode(436), modTime: time.Unix(1511109818, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _codelistMd = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x52\x56\x28\x4e\x2d\x51\x28\x29\xca\x2c\xcb\x4c\xcc\xe1\xe2\x4a\x48\x48\x28\xa8\x2c\xc9\xc8\xcf\xe3\x4a\x54\xd0\xb6\x55\x30\x04\x09\x70\x71\x41\x14\x15\xa5\xe2\x56\x91\x90\x90\x50\x5c\x98\xc3\x15\xec\xea\xe3\xea\x1c\xa2\xa0\xa5\xe0\x16\xe4\xef\xab\x50\x92\x98\x94\x93\xaa\x80\x6c\x44\x6a\x51\x51\x7e\x11\x20\x00\x00\xff\xff\x2d\x18\x55\x32\x73\x00\x00\x00")
+
+func codelistMdBytes() ([]byte, error) {
+	return bindataRead(
+		_codelistMd,
+		"codelist.md",
+	)
+}
+
+func codelistMd() (*asset, error) {
+	bytes, err := codelistMdBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "codelist.md", size: 115, mode: os.FileMode(436), modTime: time.Unix(1511806225, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -263,7 +284,7 @@ func keycheckMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "keycheck.md", size: 58, mode: os.FileMode(436), modTime: time.Unix(1511722392, 0)}
+	info := bindataFileInfo{name: "keycheck.md", size: 58, mode: os.FileMode(436), modTime: time.Unix(1511723047, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -564,6 +585,7 @@ var _bindata = map[string]func() (*asset, error){
 	"bindata.go": bindataGo,
 	"codearray.md": codearrayMd,
 	"codecomment.md": codecommentMd,
+	"codelist.md": codelistMd,
 	"commentcode.md": commentcodeMd,
 	"curjoblike.md": curjoblikeMd,
 	"easy_example.md": easy_exampleMd,
@@ -627,6 +649,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"bindata.go": &bintree{bindataGo, map[string]*bintree{}},
 	"codearray.md": &bintree{codearrayMd, map[string]*bintree{}},
 	"codecomment.md": &bintree{codecommentMd, map[string]*bintree{}},
+	"codelist.md": &bintree{codelistMd, map[string]*bintree{}},
 	"commentcode.md": &bintree{commentcodeMd, map[string]*bintree{}},
 	"curjoblike.md": &bintree{curjoblikeMd, map[string]*bintree{}},
 	"easy_example.md": &bintree{easy_exampleMd, map[string]*bintree{}},
