@@ -104,15 +104,16 @@ func (d *Decoder) noTokenErrf(format string, a ...interface{}) error {
 	return d.noTokenErr(fmt.Errorf(format, a...))
 }
 
-func (d *Decoder) passComment() {
+func (d *Decoder) passComment() bool {
 	for d.tokens.Next() {
 		token := d.token()
 		if _, ok := token.(comment); ok {
 			d.tokens.Confirm()
 		} else {
-			break
+			return true
 		}
 	}
+	return false
 }
 
 // extracts comment from the underlying tokenizer
@@ -508,7 +509,9 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 	realType := reflect.ValueOf(dest).Elem().Interface()
 	taken := map[string]Locatable{}
 	for d.tokens.Next() {
-		d.passComment()
+		if !d.passComment() {
+			break
+		}
 		token := d.token()
 
 		h, ok := token.(header)
@@ -523,7 +526,7 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		hname := h.Content.Value
 		if prev, ok := taken[hname]; ok {
 			plin, pcol := prev.Start()
-			return locerrf(token, "key `%` has been taken already at (%d, %d)", hname, plin, pcol)
+			return locerrf(token, "key `%s` has been taken already at (%d, %d)", hname, plin, pcol)
 		}
 
 		// checks on general header validity done
