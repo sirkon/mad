@@ -5,8 +5,8 @@ This is a literate configuration format library for Go inspired by Markdown.
 
 
 Read about typical usecases [here](USECASES.md). 
-In short, ___mad___ library is useful in cases where pieces of structured data or code are needed and there's not much
-nesting in data. 
+In short, ___mad___ library is not yet another configuration format. It is not really suitable for this role. 
+Its is main strenght are cases where pieces of structured data or code are needed and there's not much nesting in data.
 
 ## Installation
 
