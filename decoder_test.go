@@ -357,6 +357,48 @@ func main() {
 	}, dest)
 }
 
+func TestEmbeddedStructEasy(t *testing.T) {
+	type Embedded struct {
+		A Code `mad:"a,syntax=go"`
+	}
+	type tmp struct {
+		Embedded
+		B Comment `mad:"b"`
+	}
+	var dest tmp
+	data, err := testdata.Asset("struct_easy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDecoder(bytes.NewBuffer(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := NewContext()
+	if err := d.Decode(&dest, ctx); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, tmp{
+		Embedded: Embedded{
+			A: Code{
+				loc: Location{
+					Lin:  2,
+					XLin: 6,
+					XCol: 1,
+				},
+				Syntax: "go",
+				Code: `package main
+
+func main() {
+    panic("error")
+}
+`,
+			},
+		},
+		B: Comment("just a text\n"),
+	}, dest)
+}
+
 func TestStructReal(t *testing.T) {
 	type nested struct {
 		Prepare Code `mad:"prepare,syntax=sql cql"`

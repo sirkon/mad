@@ -431,7 +431,7 @@ func (d *Decoder) extractMap(dest interface{}, ctx Context) error {
 
 type fieldDescription struct {
 	regex    *regexp.Regexp
-	index    int
+	index    []int
 	labels   map[string]string
 	required bool
 	checked  bool
@@ -473,19 +473,30 @@ func extractFieldsMetainfo(dest interface{}) (fields []fieldDescription, err err
 	tmp := reflect.ValueOf(dest).Elem()
 	limit := tmp.NumField()
 	for i := 0; i < limit; i++ {
-		rawMad := extractMad(string(tmp.Type().Field(i).Tag))
+		fieldType := tmp.Type().Field(i)
+		if fieldType.Type.Kind() == reflect.Struct && fieldType.Anonymous {
+			embeds, err := extractFieldsMetainfo(tmp.Field(i).Addr().Interface())
+			if err != nil {
+				return nil, err
+			}
+			for _, embed := range embeds {
+				embed.index = append([]int{i}, embed.index...)
+				fields = append(fields, embed)
+			}
+		}
+		rawMad := extractMad(string(fieldType.Tag))
 		if len(rawMad) == 0 {
 			continue
 		}
 		f, err := extractFieldInfo(rawMad, func(format string, a ...interface{}) error {
 			return fmt.Errorf(fmt.Sprintf(format, a...) +
-				fmt.Sprintf(" for field %s of type %T", tmp.Type().Field(i).Name, tmp.Interface()))
+				fmt.Sprintf(" for field %s of type %T", fieldType.Name, tmp.Interface()))
 		})
 		if err != nil {
 			return fields, err
 		}
-		f.index = i
-		switch tmp.Type().Field(i).Type.Kind() {
+		f.index = []int{i}
+		switch fieldType.Type.Kind() {
 		case reflect.Map, reflect.Slice, reflect.Ptr:
 			f.required = false
 		default:
@@ -500,13 +511,26 @@ func extractFieldsMetainfo(dest interface{}) (fields []fieldDescription, err err
 	return
 }
 
+// getFieldData extracts reflect.Value and reflect.Type of field.
+func getFieldData(dest interface{}, indices []int) (field reflect.Value, fieldType reflect.StructField) {
+	field = reflect.ValueOf(dest).Elem()
+	for i, fieldIndex := range indices {
+		if i == len(indices)-1 {
+			fieldType = field.Type().Field(fieldIndex)
+		}
+		field = field.Field(fieldIndex)
+	}
+	return
+}
+
 func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 	fields, err := extractFieldsMetainfo(dest)
 	if err != nil {
 		return
 	}
 	tmp := reflect.TypeOf(dest).Elem()
-	realType := reflect.ValueOf(dest).Elem().Interface()
+	value := reflect.ValueOf(dest).Elem()
+	realType := value.Interface()
 	taken := map[string]Locatable{}
 	for d.tokens.Next() {
 		if !d.passComment() {
@@ -547,7 +571,8 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		if len(indices) > 1 {
 			fnames := []string{}
 			for _, i := range indices {
-				fnames = append(fnames, tmp.Field(fields[i].index).Name)
+				_, fieldType := getFieldData(dest, fields[i].index)
+				fnames = append(fnames, fieldType.Name)
 			}
 			return locerrf(
 				token,
@@ -565,15 +590,16 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		for k, v := range fieldMeta.labels {
 			ctx.Set(k, v)
 		}
-		if v, ok := reflect.ValueOf(dest).Elem().Field(fieldMeta.index).Interface().(Manual); ok {
+		fieldValue, _ := getFieldData(dest, fieldMeta.index)
+		if v, ok := fieldValue.Interface().(Manual); ok {
 			n, err := v.Decode(v, h.Content, d, ctx)
 			if err != nil {
 				return err
 			}
-			reflect.ValueOf(dest).Elem().Field(fieldMeta.index).Set(reflect.ValueOf(n))
+			fieldValue.Set(reflect.ValueOf(n))
 		} else {
-			fieldValue := reflect.ValueOf(dest).Elem().Field(fieldMeta.index).Addr().Interface()
-			if err = d.Decode(fieldValue, newCtx); err != nil {
+			fv := fieldValue.Addr().Interface()
+			if err = d.Decode(fv, newCtx); err != nil {
 				return err
 			}
 		}
@@ -586,7 +612,7 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 	missed := []string{}
 	for _, field := range fields {
 		if field.required && !field.checked {
-			missed = append(missed, tmp.Field(field.index).Name)
+			missed = append(missed, tmp.Field(field.index[0]).Name)
 		}
 	}
 	if len(missed) > 0 {
