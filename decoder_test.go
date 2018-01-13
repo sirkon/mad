@@ -397,6 +397,40 @@ func main() {
 		},
 		B: Comment("just a text\n"),
 	}, dest)
+
+	type (
+		E2 struct {
+			B Comment `mad:"b"`
+		}
+		T struct {
+			A Code `mad:"a,syntax=go"`
+			E2
+		}
+	)
+	var dd T
+	d, _ = NewDecoder(bytes.NewBuffer(data))
+	if err := d.Decode(&dd, ctx); err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, T{
+		A: Code{
+			loc: Location{
+				Lin:  2,
+				XLin: 6,
+				XCol: 1,
+			},
+			Syntax: "go",
+			Code: `package main
+
+func main() {
+    panic("error")
+}
+`,
+		},
+		E2: E2{
+			B: Comment("just a text\n"),
+		},
+	}, dd)
 }
 
 func TestStructReal(t *testing.T) {
