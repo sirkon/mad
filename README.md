@@ -86,6 +86,21 @@ SELECT uniq(user_id) FROM tmp;
 ```
 ````
 
+But it is not you only get these SQL pieces. You also get their position in the Markdown file:
+
+```go
+fmt.Println(job.Prepare.Create.Start())
+fmt.Println(job.Prepare.Create.Finish())
+```
+
+will output something like 
+
+```
+10 1
+14 1
+```
+
+
 
 * You can also consume integers, floating points, strings and booleans using `raw` code blocks (see [advanced example](HARD.md)):
 * you need `mad.Code` type to consume code block
