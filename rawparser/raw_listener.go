@@ -1,4 +1,4 @@
-// Generated from Raw.g4 by ANTLR 4.7.
+// Code generated from Raw.g4 by ANTLR 4.7.1. DO NOT EDIT.
 
 package rawparser // Raw
 import "github.com/antlr/antlr4/runtime/Go/antlr"

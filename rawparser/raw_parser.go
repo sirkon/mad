@@ -1,4 +1,4 @@
-// Generated from Raw.g4 by ANTLR 4.7.
+// Code generated from Raw.g4 by ANTLR 4.7.1. DO NOT EDIT.
 
 package rawparser // Raw
 import (
@@ -724,14 +724,16 @@ func (p *RawParser) Boolean() (localctx IBooleanContext) {
 	}()
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(43)
-	_la = p.GetTokenStream().LA(1)
+	{
+		p.SetState(43)
+		_la = p.GetTokenStream().LA(1)
 
-	if !(_la == RawParserT__1 || _la == RawParserT__2) {
-		p.GetErrorHandler().RecoverInline(p)
-	} else {
-		p.GetErrorHandler().ReportMatch(p)
-		p.Consume()
+		if !(_la == RawParserT__1 || _la == RawParserT__2) {
+			p.GetErrorHandler().RecoverInline(p)
+		} else {
+			p.GetErrorHandler().ReportMatch(p)
+			p.Consume()
+		}
 	}
 
 	return localctx

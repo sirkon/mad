@@ -314,3 +314,18 @@ func TestEasy(t *testing.T) {
 	require.Equal(t, "python", dest.Field1.Code.Syntax)
 	require.Equal(t, `print "hello world!"`+"\n", dest.Field1.Code.Code)
 }
+
+func TestRegression3SyntaxType(t *testing.T) {
+	data, err := testdata.Asset("regression3.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var dest struct {
+		Field struct {
+			Code Code `mad:"code,syntax=json python"`
+		} `mad:"field"`
+	}
+	if err := Unmarshal(data, &dest, NewContext()); err != nil {
+		t.Fatal(err)
+	}
+}

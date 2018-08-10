@@ -196,7 +196,7 @@ func (d *Decoder) extractCode(dest *Code, ctx Context) error {
 	end := pos + len(cc.Syntax.Value)
 	check := pos >= 0 &&
 		// check left bound
-		(pos == 0 || isBound(rune(syntax[pos]))) &&
+		(pos == 0 || isBound(rune(syntax[pos-1]))) &&
 		// check right bound
 		(end == len(syntax) || isBound(rune(syntax[end])))
 	if !check {

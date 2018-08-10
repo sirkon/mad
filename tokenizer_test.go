@@ -711,7 +711,7 @@ func TestRegression2(t *testing.T) {
 		}, tokens)
 }
 
-func TestRegression3(t *testing.T) {
+func TestRegressionCodeComment(t *testing.T) {
 	data, err := testdata.Asset("codecomment.md")
 	if err != nil {
 		t.Fatal(err)

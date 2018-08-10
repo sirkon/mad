@@ -17,6 +17,7 @@
 // rawunmarshaler.md
 // regression.md
 // regression2.md
+// regression3.md
 // scalar_decoder.md
 // statuses.md
 // struct_easy.md
@@ -104,7 +105,7 @@ func allfeaturesMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "allfeatures.md", size: 219, mode: os.FileMode(436), modTime: time.Unix(1511633977, 0)}
+	info := bindataFileInfo{name: "allfeatures.md", size: 219, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -124,7 +125,7 @@ func bindataGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1511806236, 0)}
+	info := bindataFileInfo{name: "bindata.go", size: 0, mode: os.FileMode(436), modTime: time.Unix(1533911326, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -144,7 +145,7 @@ func codearrayMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "codearray.md", size: 123, mode: os.FileMode(436), modTime: time.Unix(1511114177, 0)}
+	info := bindataFileInfo{name: "codearray.md", size: 123, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -164,7 +165,7 @@ func codecommentMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "codecomment.md", size: 54, mode: os.FileMode(436), modTime: time.Unix(1511109818, 0)}
+	info := bindataFileInfo{name: "codecomment.md", size: 54, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -184,7 +185,7 @@ func codelistMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "codelist.md", size: 115, mode: os.FileMode(436), modTime: time.Unix(1511806225, 0)}
+	info := bindataFileInfo{name: "codelist.md", size: 115, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -204,7 +205,7 @@ func commentcodeMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "commentcode.md", size: 53, mode: os.FileMode(436), modTime: time.Unix(1511110059, 0)}
+	info := bindataFileInfo{name: "commentcode.md", size: 53, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -224,7 +225,7 @@ func curjoblikeMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "curjoblike.md", size: 454, mode: os.FileMode(436), modTime: time.Unix(1511630483, 0)}
+	info := bindataFileInfo{name: "curjoblike.md", size: 454, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -244,7 +245,7 @@ func easy_exampleMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "easy_example.md", size: 112, mode: os.FileMode(436), modTime: time.Unix(1511638231, 0)}
+	info := bindataFileInfo{name: "easy_example.md", size: 112, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -264,7 +265,7 @@ func generateGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "generate.go", size: 59, mode: os.FileMode(436), modTime: time.Unix(1510394881, 0)}
+	info := bindataFileInfo{name: "generate.go", size: 59, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -284,7 +285,7 @@ func keycheckMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "keycheck.md", size: 58, mode: os.FileMode(436), modTime: time.Unix(1511723047, 0)}
+	info := bindataFileInfo{name: "keycheck.md", size: 58, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -304,7 +305,7 @@ func level_normalizationMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "level_normalization.md", size: 23, mode: os.FileMode(436), modTime: time.Unix(1510425266, 0)}
+	info := bindataFileInfo{name: "level_normalization.md", size: 23, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -324,7 +325,7 @@ func mapsMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "maps.md", size: 78, mode: os.FileMode(436), modTime: time.Unix(1511287031, 0)}
+	info := bindataFileInfo{name: "maps.md", size: 78, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -344,7 +345,7 @@ func metricMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "metric.md", size: 922, mode: os.FileMode(436), modTime: time.Unix(1511619877, 0)}
+	info := bindataFileInfo{name: "metric.md", size: 922, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -364,7 +365,7 @@ func rawsection() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "rawsection", size: 40, mode: os.FileMode(436), modTime: time.Unix(1510405192, 0)}
+	info := bindataFileInfo{name: "rawsection", size: 40, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -384,7 +385,7 @@ func rawunmarshalerMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "rawunmarshaler.md", size: 40, mode: os.FileMode(436), modTime: time.Unix(1511375683, 0)}
+	info := bindataFileInfo{name: "rawunmarshaler.md", size: 40, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -404,7 +405,7 @@ func regressionMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "regression.md", size: 28, mode: os.FileMode(436), modTime: time.Unix(1511040126, 0)}
+	info := bindataFileInfo{name: "regression.md", size: 28, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -424,7 +425,27 @@ func regression2Md() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "regression2.md", size: 35, mode: os.FileMode(436), modTime: time.Unix(1511551522, 0)}
+	info := bindataFileInfo{name: "regression2.md", size: 35, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _regression3Md = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x52\x4e\xcb\x4c\xcd\x49\xe1\x52\x56\x4e\xce\x4f\x49\xe5\x4a\x48\x48\x28\xa8\x2c\xc9\xc8\xcf\xe3\xaa\xe6\xaa\x05\xf1\xb8\x14\x14\x14\x14\xb8\x00\x01\x00\x00\xff\xff\x4c\x6c\x9d\x65\x25\x00\x00\x00")
+
+func regression3MdBytes() ([]byte, error) {
+	return bindataRead(
+		_regression3Md,
+		"regression3.md",
+	)
+}
+
+func regression3Md() (*asset, error) {
+	bytes, err := regression3MdBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "regression3.md", size: 37, mode: os.FileMode(436), modTime: time.Unix(1533911318, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -444,7 +465,7 @@ func scalar_decoderMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "scalar_decoder.md", size: 175, mode: os.FileMode(436), modTime: time.Unix(1511033510, 0)}
+	info := bindataFileInfo{name: "scalar_decoder.md", size: 175, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -464,7 +485,7 @@ func statusesMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "statuses.md", size: 117, mode: os.FileMode(436), modTime: time.Unix(1511559299, 0)}
+	info := bindataFileInfo{name: "statuses.md", size: 117, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -484,7 +505,7 @@ func struct_easyMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "struct_easy.md", size: 76, mode: os.FileMode(436), modTime: time.Unix(1511471071, 0)}
+	info := bindataFileInfo{name: "struct_easy.md", size: 76, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -504,7 +525,7 @@ func struct_realMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "struct_real.md", size: 186, mode: os.FileMode(436), modTime: time.Unix(1511550172, 0)}
+	info := bindataFileInfo{name: "struct_real.md", size: 186, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -524,7 +545,7 @@ func testMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "test.md", size: 45, mode: os.FileMode(436), modTime: time.Unix(1510423269, 0)}
+	info := bindataFileInfo{name: "test.md", size: 45, mode: os.FileMode(436), modTime: time.Unix(1511864412, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -598,6 +619,7 @@ var _bindata = map[string]func() (*asset, error){
 	"rawunmarshaler.md": rawunmarshalerMd,
 	"regression.md": regressionMd,
 	"regression2.md": regression2Md,
+	"regression3.md": regression3Md,
 	"scalar_decoder.md": scalar_decoderMd,
 	"statuses.md": statusesMd,
 	"struct_easy.md": struct_easyMd,
@@ -662,6 +684,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"rawunmarshaler.md": &bintree{rawunmarshalerMd, map[string]*bintree{}},
 	"regression.md": &bintree{regressionMd, map[string]*bintree{}},
 	"regression2.md": &bintree{regression2Md, map[string]*bintree{}},
+	"regression3.md": &bintree{regression3Md, map[string]*bintree{}},
 	"scalar_decoder.md": &bintree{scalar_decoderMd, map[string]*bintree{}},
 	"statuses.md": &bintree{statusesMd, map[string]*bintree{}},
 	"struct_easy.md": &bintree{struct_easyMd, map[string]*bintree{}},
