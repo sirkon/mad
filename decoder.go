@@ -616,9 +616,14 @@ func (d *Decoder) extractStruct(dest interface{}, ctx Context) (err error) {
 		}
 	}
 	if len(missed) > 0 {
-		return fmt.Errorf(
-			"%d:%d: fields %s of type %T are required but were missed",
-			d.lastLin+1, d.lastCol+1,
+		return locerrf(
+			Location{
+				Lin:  d.lastLin + 1,
+				Col:  d.lastCol + 1,
+				XLin: d.lastLin + 1,
+				XCol: d.lastCol + 1,
+			},
+			"fields %s of type %T are required but were missed",
 			strings.Join(missed, ", "),
 			realType,
 		)
