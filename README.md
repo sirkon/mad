@@ -10,14 +10,9 @@ Its is main strenght are cases where pieces of structured data or code are neede
 
 ## Installation
 
-* the prefered way is via the dep
-    ```
-    dep ensure -add github.com/sirkon/mad    
-    ```
-* using go get is not recommended, but still should work
-    ```
-    go get github.com/sirkon/mad
-    ```
+```
+go get github.com/sirkon/mad
+```
  
 
 ## Simplest usage
